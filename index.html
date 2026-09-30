@@ -1406,5 +1406,78 @@
             switchTab('overview');
         };
     </script>
+<!-- Firebase SDK 및 실시간 데이터 처리 스크립트 -->
+  <script type="module">
+    // 1. 브라우저용 CDN 경로에서 Firebase 함수 로드
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+    // 2. 제공해주신 Firebase 구성 설정
+    const firebaseConfig = {
+      apiKey: "AIzaSyD1H2dViopwFAiHIWAJPzI7s0SqBDAGels",
+      authDomain: "hukuoka-tour2026.firebaseapp.com",
+      databaseURL: "https://hukuoka-tour2026-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "hukuoka-tour2026",
+      storageBucket: "hukuoka-tour2026.firebasestorage.app",
+      messagingSenderId: "182409782645",
+      appId: "1:182409782645:web:b59615e9dee3f35f915f3c"
+    };
+
+    // 3. Firebase 초기화
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    // ----------------------------------------------------
+    // [예시 1] 공용노트 실시간 동기화 코드
+    // HTML에 <textarea id="sharedNote"></textarea> 가 있을 때
+    // ----------------------------------------------------
+    const noteElement = document.getElementById('sharedNote');
+    const noteRef = ref(database, 'sharedNote');
+
+    // (1) 사용자가 노트에 입력할 때 Firebase에 실시간 저장
+    if (noteElement) {
+      noteElement.addEventListener('input', (e) => {
+        set(noteRef, {
+          text: e.target.value,
+          updatedAt: Date.now()
+        });
+      });
+
+      // (2) 다른 접속자가 노트를 수정하면 내 화면에도 즉시 반영
+      onValue(noteRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data && data.text !== undefined) {
+          // 커서 위치 유지를 위해 현재 값과 다를 때만 업데이트
+          if (noteElement.value !== data.text) {
+            noteElement.value = data.text;
+          }
+        }
+      });
+    }
+
+    // ----------------------------------------------------
+    // [예시 2] 스코어보드 / 정산 데이터 실시간 동기화 예시
+    // 필요에 따라 아래 경로('scores', 'settlement')를 활용하세요.
+    // ----------------------------------------------------
+    
+    // 예: 스코어 저장 함수
+    window.saveScore = function(scoreData) {
+      set(ref(database, 'scores'), scoreData);
+    };
+
+    // 예: 정산 내역 저장 함수
+    window.saveSettlement = function(settlementData) {
+      set(ref(database, 'settlement'), settlementData);
+    };
+
+    // 예: 스코어 변경 감지
+    onValue(ref(database, 'scores'), (snapshot) => {
+      const scores = snapshot.val();
+      if (scores) {
+        console.log("실시간 스코어 업데이트:", scores);
+        // 화면의 스코어 표시 HTML 요소 업데이트 로직 작성
+      }
+    });
+  </script>
 </body>
 </html>
