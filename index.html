@@ -16,7 +16,7 @@
             -webkit-tap-highlight-color: transparent;
             word-break: keep-all;
         }
-        /* Tab Visibility Control - Ensured high specificity */
+        /* Tab Visibility Control */
         .tab-content { display: none !important; }
         .tab-content.active { display: block !important; }
         
@@ -39,17 +39,15 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // TODO: 실제 Firebase 설정 정보로 입력/유지해 주시면 됩니다.
-        // 웹 앱의 Firebase 구성 설정
-const firebaseConfig = {
-apiKey: "AIzaSyD1H2dViopwFAiHIWAJPzI7s0SqBDAGels", // Firebase 콘솔에서 확인 및 입력이 필요합니다.
-authDomain: "hukuoka-tour2026.firebaseapp.com",
-databaseURL: "https://hukuoka-tour2026-default-rtdb.asia-southeast1.firebasedatabase.app",
-projectId: "hukuoka-tour2026",
-storageBucket: "hukuoka-tour2026.firebasestorage.app",
-messagingSenderId: "182409782645",
-appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확인 및 입력이 필요합니다.
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1H2dViopwFAiHIWAJPzI7s0SqBDAGels",
+            authDomain: "hukuoka-tour2026.firebaseapp.com",
+            databaseURL: "https://hukuoka-tour2026-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "hukuoka-tour2026",
+            storageBucket: "hukuoka-tour2026.firebasestorage.app",
+            messagingSenderId: "182409782645",
+            appId: "1:182409782645:web:b59615e9dee3f35f915f3c"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -58,6 +56,12 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
         window.setDoc = setDoc;
         window.getDoc = getDoc;
         window.onSnapshot = onSnapshot;
+
+        // Firebase 로딩 후 리스너 자동 초기화
+        window.addEventListener('DOMContentLoaded', () => {
+            initFirebaseListeners();
+            renderTable();
+        });
     </script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-20">
@@ -487,7 +491,7 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
             <!-- 정산 리스트 -->
             <div class="space-y-2">
                 <div class="flex items-center justify-between text-xs font-bold text-slate-700 px-1">
-                    <span>지출 항목별 라인바이라인 정산 내역</span>
+                    <span>지출 항목별 상세 내역</span>
                     <button type="button" onclick="clearExpenses()" class="text-[11px] text-rose-500 hover:underline cursor-pointer">전체 삭제</button>
                 </div>
                 <div id="expenseList" class="space-y-2.5 text-xs">
@@ -495,11 +499,34 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
                 </div>
             </div>
 
-            <!-- 정산 종합 요약 -->
-            <div class="bg-blue-50/70 p-4 rounded-xl border border-blue-100 text-xs space-y-2.5">
-                <div class="flex justify-between items-center font-bold text-blue-900 text-sm sm:text-base">
+            <!-- 정산 종합 요약 카드 -->
+            <div class="bg-blue-50/70 p-4 rounded-xl border border-blue-100 text-xs space-y-3">
+                <div class="flex justify-between items-center font-bold text-blue-900 text-sm sm:text-base border-b border-blue-200/60 pb-2">
                     <span>총 지출 합계 (누적)</span>
                     <span id="totalExpenseDisplay" class="text-blue-700 text-base sm:text-lg">0 원</span>
+                </div>
+                
+                <!-- 1인당 기본 분담금 수정 컨트롤 -->
+                <div class="flex items-center justify-between gap-2">
+                    <span class="font-bold text-slate-700">1인당 기본 분담금 (N/1):</span>
+                    <div class="flex items-center space-x-1">
+                        <input type="number" id="customPerPersonInput" onchange="handleCustomPerPersonChange()" placeholder="자동계산" class="w-28 px-2 py-1 bg-white border border-slate-300 rounded text-right font-bold text-blue-800 text-xs focus:outline-none focus:border-blue-500">
+                        <span class="text-slate-600 font-bold">원/엔</span>
+                        <button type="button" onclick="resetPerPersonShare()" class="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-1.5 py-1 rounded font-semibold ml-1 cursor-pointer" title="자동 분할로 복원">
+                            초기화
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 개인별 정산 리포트 (받을 돈 / 줄 돈 현황) -->
+            <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm space-y-3">
+                <h4 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span><i class="fa-solid fa-file-invoice-dollar text-emerald-600 mr-1.5"></i> 개인별 최종 입금/환급 정산서</span>
+                    <span class="text-[11px] text-slate-400 font-normal">결제액 - 부담금 기준</span>
+                </h4>
+                <div id="personalSettlementReport" class="space-y-2 text-xs">
+                    <!-- Dynamic Individual Balance Cards -->
                 </div>
             </div>
 
@@ -625,6 +652,7 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
         let expenses = [];
         let settlementMembers = [...players];
         let notesHistory = [];
+        let customPerPersonShare = null;
 
         // 탭 전환
         function switchTab(tabId) {
@@ -693,9 +721,13 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
                     if (data.members && Array.isArray(data.members)) settlementMembers = data.members;
                     if (data.expenses && Array.isArray(data.expenses)) expenses = data.expenses;
                     if (data.notesHistory && Array.isArray(data.notesHistory)) notesHistory = data.notesHistory;
+                    if (data.customPerPersonShare !== undefined) customPerPersonShare = data.customPerPersonShare;
 
                     const countInput = document.getElementById('settlementMemberCount');
                     if (countInput) countInput.value = settlementMembers.length;
+
+                    const perPersonInput = document.getElementById('customPerPersonInput');
+                    if (perPersonInput) perPersonInput.value = customPerPersonShare !== null ? customPerPersonShare : '';
 
                     renderSettlementMembersInputs();
                     updatePayerSelect();
@@ -705,7 +737,7 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
             });
         }
 
-        // 초기 테이블 렌더링
+        // 초기 스코어 테이블 렌더링
         function renderTable() {
             const tbody = document.getElementById('scoreBody');
             if(!tbody) return;
@@ -841,7 +873,7 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
             try {
                 if (window.db) {
                     await window.setDoc(window.doc(window.db, "fukuokaTour", FIREBASE_SCORE_DOC), dataToSave);
-                    showToast('Firebase 클라우드에 성공적으로 저장되었습니다! ☁️', '🎉');
+                    showToast('Firebase 클라우드에 성공적으로 저장되었습니다! ☁', '🎉');
                 } else {
                     showToast('Firebase 연결을 확인해주세요.', '⚠️');
                 }
@@ -879,7 +911,7 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
                 roundPhotos[roundKey].splice(index, 1);
                 updateRoundPhotoUI();
                 saveScores();
-                showToast('사진이 삭제되었습니다.', '🗑️️');
+                showToast('사진이 삭제되었습니다.', '🗑');
             }
         }
 
@@ -1027,7 +1059,7 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
             expenses = expenses.filter(e => e.id !== id);
             saveSettlementData();
             renderExpenses();
-            showToast('지출 항목이 삭제되었습니다.', '🗑️️');
+            showToast('지출 항목이 삭제되었습니다.', '🗑');
         }
 
         function clearExpenses() {
@@ -1038,11 +1070,32 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
             showToast('모든 지출 항목이 초기화되었습니다.', '🧹');
         }
 
+        function handleCustomPerPersonChange() {
+            const val = document.getElementById('customPerPersonInput').value;
+            if (val === '' || isNaN(val)) {
+                customPerPersonShare = null;
+            } else {
+                customPerPersonShare = parseFloat(val);
+            }
+            renderExpenses();
+            saveSettlementData();
+        }
+
+        function resetPerPersonShare() {
+            customPerPersonShare = null;
+            const input = document.getElementById('customPerPersonInput');
+            if (input) input.value = '';
+            renderExpenses();
+            saveSettlementData();
+            showToast('1인당 분담금이 자동 계산(N/1)으로 초기화되었습니다.', '🔄');
+        }
+
         async function saveSettlementData() {
             const dataToSave = {
                 members: settlementMembers,
                 expenses: expenses,
-                notesHistory: notesHistory
+                notesHistory: notesHistory,
+                customPerPersonShare: customPerPersonShare
             };
 
             try {
@@ -1057,96 +1110,106 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
         function renderExpenses() {
             const list = document.getElementById('expenseList');
             const totalDisplay = document.getElementById('totalExpenseDisplay');
-            if(!list || !totalDisplay) return;
+            const reportContainer = document.getElementById('personalSettlementReport');
+            if(!list || !totalDisplay || !reportContainer) return;
 
             const splitCount = settlementMembers.length > 0 ? settlementMembers.length : 1;
 
             if (expenses.length === 0) {
                 list.innerHTML = '<p class="text-slate-400 text-center py-3">등록된 지출 내역이 없습니다.</p>';
                 totalDisplay.innerText = '0 원';
+                reportContainer.innerHTML = '<p class="text-slate-400 text-center py-2 text-xs">등록된 지출 내역이 없습니다.</p>';
                 return;
             }
 
             let totalSum = 0;
+            let payerPaidMap = {};
+            let payerAccountMap = {};
+
+            settlementMembers.forEach(m => {
+                payerPaidMap[m] = 0;
+            });
+
             list.innerHTML = '';
 
             expenses.forEach(item => {
                 totalSum += item.amount;
-                const perItemShare = Math.round(item.amount / splitCount);
+                if (payerPaidMap[item.payer] !== undefined) {
+                    payerPaidMap[item.payer] += item.amount;
+                } else {
+                    payerPaidMap[item.payer] = item.amount;
+                }
+
+                if (item.account) {
+                    payerAccountMap[item.payer] = item.account;
+                }
 
                 const div = document.createElement('div');
                 div.className = "p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5";
                 
-                let itemHtml = `
+                let receiptBtn = item.receipt ? `<button type="button" onclick="openImageModal('${item.receipt}', '${item.title} 영수증')" class="text-xs text-blue-600 underline font-semibold"><i class="fa-solid fa-receipt mr-1"></i>영수증 보기</button>` : '';
+
+                div.innerHTML = `
                     <div class="flex items-center justify-between flex-wrap gap-1">
                         <div>
                             <span class="font-bold text-slate-900 text-xs sm:text-sm">${item.title}</span>
                             <span class="text-slate-500 text-[11px] ml-1.5">(결제자: <b>${item.payer}</b>)</span>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <span class="font-bold text-blue-600 text-xs sm:text-sm">${item.amount.toLocaleString()}원/엔</span>
-                            <button type="button" onclick="deleteExpense(${item.id})" class="text-slate-400 hover:text-rose-500 text-xs p-1">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
+                            <span class="font-bold text-blue-600 text-xs sm:text-sm">${item.amount.toLocaleString()}원</span>
+                            <button type="button" onclick="deleteExpense(${item.id})" class="text-rose-500 hover:text-rose-700 text-xs p-1 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
-                    <div class="flex items-center justify-between text-[11px] text-slate-500 bg-white p-2 rounded-lg border border-slate-100">
-                        <span>1인당 부담금 (${splitCount}명 N빵): <b>${perItemShare.toLocaleString()}</b></span>
-                        ${item.account ? `<span class="text-slate-700">계좌: ${item.account}</span>` : ''}
-                    </div>
+                    ${item.account ? `<div class="text-[11px] text-slate-500">🏦 입금 계좌: ${item.account}</div>` : ''}
+                    ${receiptBtn}
                 `;
-
-                if (item.receipt) {
-                    itemHtml += `
-                        <div class="pt-1">
-                            <button type="button" onclick="openImageModal('${item.receipt}', '${item.title} 영수증')" class="text-[11px] text-blue-600 hover:underline flex items-center space-x-1 font-semibold">
-                                <i class="fa-solid fa-receipt"></i>
-                                <span>첨부된 영수증 보기</span>
-                            </button>
-                        </div>
-                    `;
-                }
-
-                div.innerHTML = itemHtml;
                 list.appendChild(div);
             });
 
             totalDisplay.innerText = `${totalSum.toLocaleString()} 원/엔`;
+
+            const perPersonShare = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalSum / splitCount);
+
+            reportContainer.innerHTML = '';
+            settlementMembers.forEach(m => {
+                const paid = payerPaidMap[m] || 0;
+                const balance = paid - perPersonShare;
+                const account = payerAccountMap[m] || '';
+
+                let statusText = '';
+                let statusClass = '';
+
+                if (balance > 0) {
+                    statusText = `<b>${balance.toLocaleString()}원</b> 받기 (환급)`;
+                    statusClass = 'text-emerald-600 bg-emerald-50 border-emerald-200';
+                } else if (balance < 0) {
+                    statusText = `<b>${Math.abs(balance).toLocaleString()}원</b> 보낼 돈 (입금)`;
+                    statusClass = 'text-rose-600 bg-rose-50 border-rose-200';
+                } else {
+                    statusText = '정산 완료 (0원)';
+                    statusClass = 'text-slate-600 bg-slate-50 border-slate-200';
+                }
+
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs ${statusClass}`;
+                card.innerHTML = `
+                    <div>
+                        <span class="font-bold text-slate-900 text-sm">${m}</span>
+                        <span class="text-[11px] text-slate-500 ml-2">(총 결제: ${paid.toLocaleString()}원)</span>
+                        ${account ? `<div class="text-[10px] text-slate-500 mt-0.5">계좌: ${account}</div>` : ''}
+                    </div>
+                    <div class="font-bold text-xs sm:text-sm">${statusText}</div>
+                `;
+                reportContainer.appendChild(card);
+            });
         }
 
-        function copySettlementText() {
-            if (expenses.length === 0) {
-                showToast('정산할 지출 내역이 없습니다.', '⚠️');
-                return;
-            }
-
-            const splitCount = settlementMembers.length > 0 ? settlementMembers.length : 1;
-            let totalSum = 0;
-            let text = `[2026 후쿠오카 골프 & 시티 투어 정산 내역]\n참여 인원: ${splitCount}명 (${settlementMembers.join(', ')})\n\n`;
-
-            expenses.forEach((item, idx) => {
-                totalSum += item.amount;
-                const perItemShare = Math.round(item.amount / splitCount);
-                text += `${idx + 1}. ${item.title}\n`;
-                text += `  - 결제 금액: ${item.amount.toLocaleString()}원/엔 (결제자: ${item.payer})\n`;
-                text += `  - 1인당: ${perItemShare.toLocaleString()}원/엔\n`;
-                if (item.account) text += `  - 입금 계좌: ${item.account}\n`;
-                text += `\n`;
-            });
-
-            const totalPerPerson = Math.round(totalSum / splitCount);
-            text += `------------------------------\n`;
-            text += `💰 총 지출 합계: ${totalSum.toLocaleString()}원/엔\n`;
-            text += `👤 1인당 총 부담금: ${totalPerPerson.toLocaleString()}원/엔\n`;
-
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('정산 내역이 클립보드에 복사되었습니다! 카톡에 붙여넣으세요.', '📋');
-            });
-        }
-
-        // 메모 이력 관련
+        // ==========================================
+        // 메모(NOTES) CRUD 로직
+        // ==========================================
         function saveNewNote() {
             const textarea = document.getElementById('newNoteInput');
+            if(!textarea) return;
             const content = textarea.value.trim();
 
             if (!content) {
@@ -1155,21 +1218,21 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
             }
 
             const now = new Date();
-            const dateStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-            notesHistory.unshift({ id: Date.now(), date: dateStr, content });
+            notesHistory.unshift({ id: Date.now(), date: dateStr, content: content });
+            textarea.value = '';
+
             saveSettlementData();
             renderNotesHistory();
-
-            textarea.value = '';
-            showToast('새 메모가 성공적으로 저장되었습니다!', '📝');
+            showToast('새 메모가 추가 및 실시간 공유되었습니다! 📝', '✨');
         }
 
         function deleteNote(id) {
             notesHistory = notesHistory.filter(n => n.id !== id);
             saveSettlementData();
             renderNotesHistory();
-            showToast('메모가 삭제되었습니다.', '🗑️');
+            showToast('메모가 삭제되었습니다.', '🗑');
         }
 
         function clearAllNotes() {
@@ -1183,12 +1246,11 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
         function renderNotesHistory() {
             const container = document.getElementById('notesHistoryContainer');
             const badge = document.getElementById('noteCountBadge');
-            const searchInput = document.getElementById('noteSearchInput');
-            if (!container) return;
+            const searchVal = (document.getElementById('noteSearchInput')?.value || '').toLowerCase().trim();
 
-            const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
-            const filteredNotes = notesHistory.filter(n => n.content.toLowerCase().includes(query));
+            if(!container) return;
 
+            const filteredNotes = notesHistory.filter(n => n.content.toLowerCase().includes(searchVal));
             if (badge) badge.innerText = filteredNotes.length;
 
             if (filteredNotes.length === 0) {
@@ -1197,20 +1259,24 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
             }
 
             container.innerHTML = '';
-            filteredNotes.forEach(note => {
+            filteredNotes.forEach(item => {
                 const div = document.createElement('div');
-                div.className = "bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1.5 text-xs";
+                div.className = "p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 relative group hover:border-amber-300 transition";
                 div.innerHTML = `
-                    <div class="flex items-center justify-between text-slate-500 text-[11px] border-b border-slate-200/60 pb-1">
-                        <span class="font-semibold text-slate-600"><i class="fa-regular fa-clock mr-1"></i>${note.date}</span>
-                        <button type="button" onclick="deleteNote(${note.id})" class="text-slate-400 hover:text-rose-500 p-0.5">
+                    <div class="flex items-center justify-between text-[11px] text-slate-400 border-b border-slate-200/60 pb-1.5">
+                        <span class="font-bold text-slate-600"><i class="fa-regular fa-clock mr-1"></i>${item.date}</span>
+                        <button type="button" onclick="deleteNote(${item.id})" class="text-rose-500 hover:text-rose-700 p-1 cursor-pointer" title="메모 삭제">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
-                    <div class="text-slate-800 whitespace-pre-wrap leading-relaxed pt-1">${note.content}</div>
+                    <div class="text-xs sm:text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(item.content)}</div>
                 `;
                 container.appendChild(div);
             });
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
         function copyAllNotesText() {
@@ -1219,26 +1285,52 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
                 return;
             }
 
-            let text = `[2026 후쿠오카 여행 작성 메모 이력]\n\n`;
-            notesHistory.forEach((note, idx) => {
-                text += `📌 메모 #${idx + 1} (${note.date})\n${note.content}\n\n`;
+            let text = `[📝 2026 후쿠오카 골프 메모 모음]\n\n`;
+            notesHistory.forEach((n, idx) => {
+                text += `${idx+1}. (${n.date})\n${n.content}\n---------------------\n`;
             });
 
             navigator.clipboard.writeText(text).then(() => {
-                showToast('전체 메모가 클립보드에 복사되었습니다!', '📋');
+                showToast('전체 메모가 클립보드에 복사되었습니다! 📋', '✅');
             });
         }
 
-        // 공통 유틸리티 모달 & 토스트
+        function copySettlementText() {
+            if (expenses.length === 0) {
+                showToast('복사할 정산 내역이 없습니다.', '⚠️');
+                return;
+            }
+
+            let totalSum = expenses.reduce((acc, cur) => acc + cur.amount, 0);
+            let splitCount = settlementMembers.length > 0 ? settlementMembers.length : 1;
+            let perPersonShare = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalSum / splitCount);
+
+            let text = `[💰 2026 후쿠오카 여행 정산 내역]\n`;
+            text += `• 총 지출: ${totalSum.toLocaleString()}원\n`;
+            text += `• 정산 인원: ${splitCount}명 (1인당 ${perPersonShare.toLocaleString()}원)\n\n`;
+            text += `[상세 지출 항목]\n`;
+
+            expenses.forEach(e => {
+                text += `- ${e.title}: ${e.amount.toLocaleString()}원 (${e.payer})\n`;
+            });
+
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('정산 내역이 클립보드에 복사되었습니다! 📋', '✅');
+            });
+        }
+
+        // ==========================================
+        // 모달 & 토스트 알림 공통 유틸
+        // ==========================================
         function showToast(message, icon = 'ℹ️') {
             const toast = document.getElementById('toast');
-            const msgEl = document.getElementById('toastMsg');
-            const iconEl = document.getElementById('toastIcon');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
 
-            if (!toast || !msgEl) return;
+            if(!toast) return;
 
-            msgEl.innerText = message;
-            if (iconEl) iconEl.innerText = icon;
+            toastIcon.innerText = icon;
+            toastMsg.innerText = message;
 
             toast.classList.remove('opacity-0', 'pointer-events-none');
             toast.classList.add('opacity-100');
@@ -1249,72 +1341,57 @@ appId: "1:182409782645:web:b59615e9dee3f35f915f3c" // Firebase 콘솔에서 확�
             }, 2500);
         }
 
-        function openImageModal(src, title) {
+        function openImageModal(src, title = '이미지 미리보기') {
             const modal = document.getElementById('imageModal');
             const img = document.getElementById('modalImageElement');
             const titleEl = document.getElementById('imageModalTitle');
 
-            if (modal && img) {
-                img.src = src;
-                if (titleEl) titleEl.innerText = title || '이미지 미리보기';
-                modal.classList.remove('hidden');
-            }
+            if(img) img.src = src;
+            if(titleEl) titleEl.innerText = title;
+            if(modal) modal.classList.remove('hidden');
         }
 
         function closeImageModal() {
             const modal = document.getElementById('imageModal');
-            if (modal) modal.classList.add('hidden');
+            if(modal) modal.classList.add('hidden');
         }
 
         function openShareModal() {
             const modal = document.getElementById('shareModal');
-            if (modal) modal.classList.remove('hidden');
+            if(modal) modal.classList.remove('hidden');
         }
 
         function closeShareModal() {
             const modal = document.getElementById('shareModal');
-            if (modal) modal.classList.add('hidden');
+            if(modal) modal.classList.add('hidden');
+        }
+
+        function copyFormattedScoreText() {
+            let text = `[⛳ 2026 후쿠오카 골프 스코어 요약]\n\n`;
+            players.forEach((p, idx) => {
+                const r1 = document.getElementById(`r1_${idx}`)?.value || '-';
+                const r2 = document.getElementById(`r2_${idx}`)?.value || '-';
+                const r3 = document.getElementById(`r3_${idx}`)?.value || '-';
+                const r4 = document.getElementById(`r4_${idx}`)?.value || '-';
+                text += `• ${p}: 1R(${r1}) | 2R(${r2}) | 3R(${r3}) | 4R(${r4})\n`;
+            });
+
+            navigator.clipboard.writeText(text).then(() => {
+                closeShareModal();
+                showToast('스코어 요약이 카톡용으로 복사되었습니다! 📋', '✅');
+            });
+        }
+
+        function copyCurrentLink() {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                closeShareModal();
+                showToast('현재 페이지 링크가 복사되었습니다! 🔗', '✅');
+            });
         }
 
         function shareKakao() {
             openShareModal();
         }
-
-        function copyCurrentLink() {
-            navigator.clipboard.writeText(window.location.href).then(() => {
-                showToast('현재 페이지 링크가 복사되었습니다!', '🔗');
-            });
-        }
-
-        function copyFormattedScoreText() {
-            let text = `⛳ [2026 후쿠오카 골프 & 시티 투어 스코어 요약]\n\n`;
-            const roundNames = [
-                document.getElementById('name_r1')?.value || '1R',
-                document.getElementById('name_r2')?.value || '2R',
-                document.getElementById('name_r3')?.value || '3R',
-                document.getElementById('name_r4')?.value || '4R'
-            ];
-
-            players.forEach((player, pIndex) => {
-                const r1 = document.getElementById(`r1_${pIndex}`)?.value || '-';
-                const r2 = document.getElementById(`r2_${pIndex}`)?.value || '-';
-                const r3 = document.getElementById(`r3_${pIndex}`)?.value || '-';
-                const r4 = document.getElementById(`r4_${pIndex}`)?.value || '-';
-                text += `👤 ${player}: 1R(${r1}) | 2R(${r2}) | 3R(${r3}) | 4R(${r4})\n`;
-            });
-
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('스코어 요약 텍스트가 복사되었습니다!', '📋');
-            });
-        }
-
-        // 페이지 로드 초기화
-        window.addEventListener('DOMContentLoaded', () => {
-            renderTable();
-            setTimeout(() => {
-                initFirebaseListeners();
-            }, 500);
-        });
     </script>
 </body>
 </html>
