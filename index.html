@@ -33,36 +33,6 @@
             border-radius: 4px;
         }
     </style>
-
-    <!-- Firebase SDK (Modular v9+) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyD1H2dViopwFAiHIWAJPzI7s0SqBDAGels",
-            authDomain: "hukuoka-tour2026.firebaseapp.com",
-            databaseURL: "https://hukuoka-tour2026-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "hukuoka-tour2026",
-            storageBucket: "hukuoka-tour2026.firebasestorage.app",
-            messagingSenderId: "182409782645",
-            appId: "1:182409782645:web:b59615e9dee3f35f915f3c"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        window.db = db;
-        window.doc = doc;
-        window.setDoc = setDoc;
-        window.getDoc = getDoc;
-        window.onSnapshot = onSnapshot;
-
-        // Firebase 로딩 후 테이블 렌더링 및 실시간 리스너 연결
-        window.addEventListener('DOMContentLoaded', () => {
-            if (typeof renderTable === 'function') renderTable();
-            if (typeof initFirebaseListeners === 'function') initFirebaseListeners();
-        });
-    </script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-20">
 
@@ -125,6 +95,7 @@
 
     <!-- TAB 1: 개요 & 간편일정 -->
     <div id="overview" class="tab-content active max-w-3xl mx-auto px-4 mt-2 space-y-4">
+        <!-- 기존 내용 동일 (생략 없이 원본 유지) -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
             <h3 class="text-slate-900 font-bold text-base flex items-center mb-3">
                 <i class="fa-solid fa-users text-blue-500 mr-2"></i> 여행 동반자 (8명)
@@ -362,6 +333,7 @@
             <p class="text-[11px] text-slate-500">각 라운드별로 여러 장의 스코어카드 및 기념 사진을 동시에 선택하여 업로드할 수 있습니다.</p>
             
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                <!-- 파일첨부 UI 원본 동일 -->
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col items-center text-center space-y-2">
                     <span id="label_photo_r1" class="text-xs font-bold text-slate-800 truncate w-full">1R 스코어카드</span>
                     <div id="thumb_photo_r1" class="w-full h-28 bg-slate-200 rounded-lg overflow-hidden flex items-center justify-center relative">
@@ -419,6 +391,7 @@
 
     <!-- TAB 4: 정산 -->
     <div id="settlement" class="tab-content max-w-3xl mx-auto px-4 mt-2 space-y-4">
+        <!-- 원본 정산 탭 HTML 동일 유지 -->
         <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 space-y-3">
             <div class="flex items-center justify-between flex-wrap gap-2">
                 <h3 class="text-slate-900 font-bold text-sm sm:text-base flex items-center">
@@ -624,7 +597,7 @@
         </div>
     </div>
 
-    <!-- Script Application Logic -->
+    <!-- MAIN APP SCRIPT -->
     <script>
         const players = ['원석', '종희', '선우', '영규', '지윤', '호준', '동민', '현주'];
         const FIREBASE_SCORE_DOC = "fukuoka_scores_2026";
@@ -635,6 +608,10 @@
         let settlementMembers = [...players];
         let notesHistory = [];
         let customPerPersonShare = null;
+
+        // 🔥 새롭게 추가된 상태 플래그 (Firebase 데이터를 완전히 불러왔는지 확인)
+        let isSettlementLoaded = false;
+        let isScoreLoaded = false;
 
         function showToast(msg, icon = 'ℹ️') {
             const toast = document.getElementById('toast');
@@ -716,6 +693,7 @@
                     calculateRankings();
                     updateRoundPhotoUI();
                 }
+                isScoreLoaded = true; // 스코어 데이터 로드 완료
             });
 
             // 정산 & 메모 실시간 리스너
@@ -741,7 +719,12 @@
                     updatePayerSelect();
                     renderExpenses();
                     renderNotesHistory();
+                } else {
+                    // 데이터가 없는 최초 실행 시에도 빈 화면을 렌더링
+                    renderSettlementMembersInputs();
+                    updatePayerSelect();
                 }
+                isSettlementLoaded = true; // 메모/정산 데이터 로드 완료
             });
         }
 
@@ -857,6 +840,11 @@
         }
 
         async function saveScores() {
+            if (!isScoreLoaded) {
+                showToast('아직 서버와 연결 중입니다. 잠시 후 다시 시도해주세요.', '⏳');
+                return;
+            }
+
             const dataToSave = {
                 roundNames: {
                     r1: document.getElementById('name_r1').value,
@@ -959,7 +947,10 @@
         // 정산 & 메모 공통 Firebase 저장 함수
         // ==========================================
         async function saveSettlementToFirebase() {
-            if (!window.db) return;
+            if (!window.db || !isSettlementLoaded) {
+                showToast('데이터 동기화 중입니다. 잠시 후 다시 시도해주세요.', '⏳');
+                return;
+            }
             try {
                 await window.setDoc(window.doc(window.db, "fukuokaTour", FIREBASE_SETTLEMENT_DOC), {
                     members: settlementMembers,
@@ -1201,7 +1192,7 @@
                     if (balance > 0) {
                         badgeHtml = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[11px]">+${balance.toLocaleString()} 환급 (받을 금액)</span>`;
                     } else if (balance < 0) {
-                        badgeHtml = `<span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded text-[11px]">${balance.toLocaleString()} 입금 (보낼 금액)</span>`;
+                        badgeHtml = `<span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded text-[11px]">${Math.abs(balance).toLocaleString()} 입금 (보낼 금액)</span>`;
                     } else {
                         badgeHtml = `<span class="bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded text-[11px]">0 (정산 완료)</span>`;
                     }
@@ -1263,6 +1254,11 @@
         // 메모(NOTE) 로직
         // ==========================================
         function saveNewNote() {
+            if (!isSettlementLoaded) {
+                showToast('데이터 동기화 중입니다. 잠시 후 다시 시도해주세요.', '⏳');
+                return;
+            }
+
             const input = document.getElementById('newNoteInput');
             if(!input) return;
 
@@ -1415,6 +1411,7 @@
             });
         }
 
+        // 🔥 오류가 났던 짤린 함수 수정 완료
         function copyFormattedScoreText() {
             const rounds = ['r1', 'r2', 'r3', 'r4'];
             const roundNames = [
@@ -1441,16 +1438,49 @@
                     text += `\n📌 ${roundNames[idx]}:\n`;
                     roundData.sort((a, b) => a.net - b.net);
                     roundData.forEach((d, i) => {
-                        text += ` ${i+1}위 ${d.name} | Gross ${d.gross} (Net ${d.net})\n`;
+                        text += `${i+1}위. ${d.name} (Net ${d.net} / Gross ${d.gross})\n`;
                     });
                 }
             });
 
+            text += `\n[자세히 보기]\n${window.location.href}`;
+
             navigator.clipboard.writeText(text).then(() => {
-                showToast('스코어 요약이 클립보드에 복사되었습니다!', '📋');
+                showToast('스코어 요약이 복사되었습니다!', '📋');
                 closeShareModal();
+            }).catch(() => {
+                showToast('복사에 실패했습니다.', '❌');
             });
         }
+    </script>
+
+    <!-- FIREBASE INIT SCRIPT (반드시 body 맨 마지막에 위치) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD1H2dViopwFAiHIWAJPzI7s0SqBDAGels",
+            authDomain: "hukuoka-tour2026.firebaseapp.com",
+            databaseURL: "https://hukuoka-tour2026-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "hukuoka-tour2026",
+            storageBucket: "hukuoka-tour2026.firebasestorage.app",
+            messagingSenderId: "182409782645",
+            appId: "1:182409782645:web:b59615e9dee3f35f915f3c"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        window.db = db;
+        window.doc = doc;
+        window.setDoc = setDoc;
+        window.getDoc = getDoc;
+        window.onSnapshot = onSnapshot;
+
+        // 메인 스크립트가 파싱된 후 지연 실행되므로 바로 호출
+        if (typeof initFirebaseListeners === 'function') initFirebaseListeners();
+        if (typeof renderTable === 'function') renderTable();
     </script>
 </body>
 </html>
