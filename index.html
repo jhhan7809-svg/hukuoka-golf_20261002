@@ -35,6 +35,7 @@
     </style>
 
     <!-- Firebase SDK (Modular v9+) -->
+       <!-- Firebase SDK (Modular v9+) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -57,12 +58,163 @@
         window.getDoc = getDoc;
         window.onSnapshot = onSnapshot;
 
-        // Firebase 로딩 후 리스너 자동 초기화
+        // Firebase 로딩 후 테이블 렌더링 및 실시간 리스너 연결
         window.addEventListener('DOMContentLoaded', () => {
+            if (typeof renderTable === 'function') renderTable();
             initFirebaseListeners();
-            renderTable();
         });
     </script>
+
+    <!-- Script Application Logic -->
+    <script>
+        const players = ['원석', '종희', '선우', '영규', '지윤', '호준', '동민', '현주'];
+        const FIREBASE_SCORE_DOC = "fukuoka_scores_2026";
+        const FIREBASE_SETTLEMENT_DOC = "fukuoka_settlement_2026";
+
+        let roundPhotos = { r1: [], r2: [], r3: [], r4: [] };
+        let expenses = [];
+        let settlementMembers = [...players];
+        let notesHistory = [];
+        let customPerPersonShare = null;
+
+        function showToast(msg, icon = 'ℹ️') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+            if(!toast) return;
+
+            toastMsg.innerText = msg;
+            toastIcon.innerText = icon;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function switchTab(tabId) {
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(el => {
+                el.classList.remove('active');
+                el.style.display = 'none';
+            });
+
+            const targetContent = document.getElementById(tabId);
+            if (targetContent) {
+                targetContent.classList.add('active');
+                targetContent.style.display = 'block';
+            }
+
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-white', 'text-slate-700', 'shadow-sm');
+                btn.classList.add('text-slate-600', 'hover:text-slate-900');
+            });
+
+            const targetBtn = document.getElementById('tab-' + tabId);
+            if (targetBtn) {
+                targetBtn.classList.remove('text-slate-600', 'hover:text-slate-900');
+                targetBtn.classList.add('bg-white', 'text-slate-700', 'shadow-sm');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 입력 중인 Input 인지 확인하여 포커스 상실 방지
+        function updateInputValueIfUnfocused(id, value) {
+            const el = document.getElementById(id);
+            if (el && document.activeElement !== el) {
+                el.value = value || '';
+            }
+        }
+
+        function initFirebaseListeners() {
+            if (!window.db) return;
+
+            // 스코어 실시간 리스너
+            window.onSnapshot(window.doc(window.db, "fukuokaTour", FIREBASE_SCORE_DOC), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.roundNames) {
+                        updateInputValueIfUnfocused('name_r1', data.roundNames.r1 || '1R (센트럴)');
+                        updateInputValueIfUnfocused('name_r2', data.roundNames.r2 || '2R (벳부)');
+                        updateInputValueIfUnfocused('name_r3', data.roundNames.r3 || '3R (유후)');
+                        updateInputValueIfUnfocused('name_r4', data.roundNames.r4 || '4R (로렐)');
+                    }
+                    if (data.roundPhotos) {
+                        roundPhotos = data.roundPhotos;
+                    }
+                    players.forEach((player, pIndex) => {
+                        if (data[player]) {
+                            updateInputValueIfUnfocused(`hcp_${pIndex}`, data[player].hcp);
+                            updateInputValueIfUnfocused(`r1_${pIndex}`, data[player].r1);
+                            updateInputValueIfUnfocused(`r2_${pIndex}`, data[player].r2);
+                            updateInputValueIfUnfocused(`r3_${pIndex}`, data[player].r3);
+                            updateInputValueIfUnfocused(`r4_${pIndex}`, data[player].r4);
+                        }
+                    });
+                    calculateRankings();
+                    updateRoundPhotoUI();
+                }
+            });
+
+            // 정산 & 메모 실시간 리스너
+            window.onSnapshot(window.doc(window.db, "fukuokaTour", FIREBASE_SETTLEMENT_DOC), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.members && Array.isArray(data.members)) settlementMembers = data.members;
+                    if (data.expenses && Array.isArray(data.expenses)) expenses = data.expenses;
+                    if (data.notesHistory && Array.isArray(data.notesHistory)) notesHistory = data.notesHistory;
+                    if (data.customPerPersonShare !== undefined) customPerPersonShare = data.customPerPersonShare;
+
+                    const countInput = document.getElementById('settlementMemberCount');
+                    if (countInput && document.activeElement !== countInput) {
+                        countInput.value = settlementMembers.length;
+                    }
+
+                    const perPersonInput = document.getElementById('customPerPersonInput');
+                    if (perPersonInput && document.activeElement !== perPersonInput) {
+                        perPersonInput.value = customPerPersonShare !== null ? customPerPersonShare : '';
+                    }
+
+                    renderSettlementMembersInputs();
+                    updatePayerSelect();
+                    renderExpenses();
+                    renderNotesHistory();
+                }
+            });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('scoreBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            players.forEach((player, pIndex) => {
+                let hcp = pIndex < 2 ? '10' : '15';
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                tr.innerHTML = `
+                    <td class="py-3 px-2 font-bold text-slate-900 whitespace-nowrap">${player}</td>
+                    <td class="py-3 px-1"><input type="number" id="hcp_${pIndex}" value="${hcp}" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
+                    <td class="py-3 px-1"><input type="number" id="r1_${pIndex}" value="" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
+                    <td class="py-3 px-1"><input type="number" id="r2_${pIndex}" value="" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
+                    <td class="py-3 px-1"><input type="number" id="r3_${pIndex}" value="" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
+                    <td class="py-3 px-1"><input type="number" id="r4_${pIndex}" value="" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
+                    <td class="py-3 px-2 font-bold text-blue-700 bg-blue-50/30" id="avg_${pIndex}">-</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            calculateRankings();
+            updateRoundPhotoUI();
+        }
+
+        // 이하 나머지 자바스크립트 함수(calculateRankings, saveScores, addExpense, saveNewNote 등)는 그대로 유지
+    </script>
+
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-20">
 
