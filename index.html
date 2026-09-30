@@ -78,7 +78,7 @@
             </div>
             <div class="flex items-center space-x-2">
                 <span class="bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold px-2.5 py-1 rounded-full border border-emerald-500/30">8명 확정</span>
-                <button onclick="shareKakao()" class="bg-[#FEE500] hover:bg-[#fada00] text-[#191919] font-bold text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition shadow-sm cursor-pointer" title="카카오톡 공유">
+                <button onclick="openShareModal()" class="bg-[#FEE500] hover:bg-[#fada00] text-[#191919] font-bold text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition shadow-sm cursor-pointer" title="카카오톡 공유">
                     <i class="fa-solid fa-comment text-sm"></i>
                     <span class="hidden sm:inline">공유</span>
                 </button>
@@ -654,6 +654,24 @@
         let notesHistory = [];
         let customPerPersonShare = null;
 
+        // Toast 함수
+        function showToast(msg, icon = 'ℹ️') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+            const toastIcon = document.getElementById('toastIcon');
+            if(!toast) return;
+
+            toastMsg.innerText = msg;
+            toastIcon.innerText = icon;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
         // 탭 전환
         function switchTab(tabId) {
             const contents = document.querySelectorAll('.tab-content');
@@ -1156,142 +1174,48 @@
                             <span class="text-slate-500 text-[11px] ml-1.5">(결제자: <b>${item.payer}</b>)</span>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <span class="font-bold text-blue-600 text-xs sm:text-sm">${item.amount.toLocaleString()}원</span>
-                            <button type="button" onclick="deleteExpense(${item.id})" class="text-rose-500 hover:text-rose-700 text-xs p-1 cursor-pointer"><i class="fa-solid fa-trash"></i></button>
+                            <span class="font-bold text-blue-600 text-xs sm:text-sm">${item.amount.toLocaleString()}</span>
+                            <button type="button" onclick="deleteExpense(${item.id})" class="text-slate-400 hover:text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
-                    ${item.account ? `<div class="text-[11px] text-slate-500">🏦 입금 계좌: ${item.account}</div>` : ''}
-                    ${receiptBtn}
+                    ${receiptBtn ? `<div>${receiptBtn}</div>` : ''}
                 `;
                 list.appendChild(div);
             });
 
-            totalDisplay.innerText = `${totalSum.toLocaleString()} 원/엔`;
+            totalDisplay.innerText = `${totalSum.toLocaleString()} 원`;
 
-            const perPersonShare = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalSum / splitCount);
-
+            // 개인별 정산 금액 산출
+            const targetPerPerson = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalSum / splitCount);
+            
             reportContainer.innerHTML = '';
             settlementMembers.forEach(m => {
                 const paid = payerPaidMap[m] || 0;
-                const balance = paid - perPersonShare;
-                const account = payerAccountMap[m] || '';
+                const balance = paid - targetPerPerson;
+                const account = payerAccountMap[m] ? `<div class="text-[11px] text-slate-500 mt-0.5">계좌: ${payerAccountMap[m]}</div>` : '';
 
-                let statusText = '';
-                let statusClass = '';
-
+                let statusBadge = '';
                 if (balance > 0) {
-                    statusText = `<b>${balance.toLocaleString()}원</b> 받기 (환급)`;
-                    statusClass = 'text-emerald-600 bg-emerald-50 border-emerald-200';
+                    statusBadge = `<span class="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">${balance.toLocaleString()} 원 받기</span>`;
                 } else if (balance < 0) {
-                    statusText = `<b>${Math.abs(balance).toLocaleString()}원</b> 보낼 돈 (입금)`;
-                    statusClass = 'text-rose-600 bg-rose-50 border-rose-200';
+                    statusBadge = `<span class="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">${Math.abs(balance).toLocaleString()} 원 보내기</span>`;
                 } else {
-                    statusText = '정산 완료 (0원)';
-                    statusClass = 'text-slate-600 bg-slate-50 border-slate-200';
+                    statusBadge = `<span class="text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded">정산 완료 (0원)</span>`;
                 }
 
                 const card = document.createElement('div');
-                card.className = `p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs ${statusClass}`;
+                card.className = "p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex flex-col justify-between";
                 card.innerHTML = `
-                    <div>
-                        <span class="font-bold text-slate-900 text-sm">${m}</span>
-                        <span class="text-[11px] text-slate-500 ml-2">(총 결제: ${paid.toLocaleString()}원)</span>
-                        ${account ? `<div class="text-[10px] text-slate-500 mt-0.5">계좌: ${account}</div>` : ''}
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="font-bold text-slate-900 text-xs">${m}</span>
+                            <span class="text-[11px] text-slate-500 ml-1">(결제: ${paid.toLocaleString()}원)</span>
+                        </div>
+                        <div>${statusBadge}</div>
                     </div>
-                    <div class="font-bold text-xs sm:text-sm">${statusText}</div>
+                    ${account}
                 `;
                 reportContainer.appendChild(card);
-            });
-        }
-
-        // ==========================================
-        // 메모(NOTES) CRUD 로직
-        // ==========================================
-        function saveNewNote() {
-            const textarea = document.getElementById('newNoteInput');
-            if(!textarea) return;
-            const content = textarea.value.trim();
-
-            if (!content) {
-                showToast('메모 내용을 입력해주세요.', '⚠️');
-                return;
-            }
-
-            const now = new Date();
-            const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-
-            notesHistory.unshift({ id: Date.now(), date: dateStr, content: content });
-            textarea.value = '';
-
-            saveSettlementData();
-            renderNotesHistory();
-            showToast('새 메모가 추가 및 실시간 공유되었습니다! 📝', '✨');
-        }
-
-        function deleteNote(id) {
-            notesHistory = notesHistory.filter(n => n.id !== id);
-            saveSettlementData();
-            renderNotesHistory();
-            showToast('메모가 삭제되었습니다.', '🗑');
-        }
-
-        function clearAllNotes() {
-            if (notesHistory.length === 0) return;
-            notesHistory = [];
-            saveSettlementData();
-            renderNotesHistory();
-            showToast('모든 메모가 삭제되었습니다.', '🧹');
-        }
-
-        function renderNotesHistory() {
-            const container = document.getElementById('notesHistoryContainer');
-            const badge = document.getElementById('noteCountBadge');
-            const searchVal = (document.getElementById('noteSearchInput')?.value || '').toLowerCase().trim();
-
-            if(!container) return;
-
-            const filteredNotes = notesHistory.filter(n => n.content.toLowerCase().includes(searchVal));
-            if (badge) badge.innerText = filteredNotes.length;
-
-            if (filteredNotes.length === 0) {
-                container.innerHTML = '<p class="text-slate-400 text-center py-4 text-xs">저장된 메모가 없습니다.</p>';
-                return;
-            }
-
-            container.innerHTML = '';
-            filteredNotes.forEach(item => {
-                const div = document.createElement('div');
-                div.className = "p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 relative group hover:border-amber-300 transition";
-                div.innerHTML = `
-                    <div class="flex items-center justify-between text-[11px] text-slate-400 border-b border-slate-200/60 pb-1.5">
-                        <span class="font-bold text-slate-600"><i class="fa-regular fa-clock mr-1"></i>${item.date}</span>
-                        <button type="button" onclick="deleteNote(${item.id})" class="text-rose-500 hover:text-rose-700 p-1 cursor-pointer" title="메모 삭제">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                    <div class="text-xs sm:text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(item.content)}</div>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        function escapeHtml(str) {
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
-
-        function copyAllNotesText() {
-            if (notesHistory.length === 0) {
-                showToast('복사할 메모가 없습니다.', '⚠️');
-                return;
-            }
-
-            let text = `[📝 2026 후쿠오카 골프 메모 모음]\n\n`;
-            notesHistory.forEach((n, idx) => {
-                text += `${idx+1}. (${n.date})\n${n.content}\n---------------------\n`;
-            });
-
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('전체 메모가 클립보드에 복사되었습니다! 📋', '✅');
             });
         }
 
@@ -1301,96 +1225,195 @@
                 return;
             }
 
-            let totalSum = expenses.reduce((acc, cur) => acc + cur.amount, 0);
-            let splitCount = settlementMembers.length > 0 ? settlementMembers.length : 1;
-            let perPersonShare = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalSum / splitCount);
+            const splitCount = settlementMembers.length > 0 ? settlementMembers.length : 1;
+            let totalSum = 0;
+            let payerPaidMap = {};
 
-            let text = `[💰 2026 후쿠오카 여행 정산 내역]\n`;
-            text += `• 총 지출: ${totalSum.toLocaleString()}원\n`;
-            text += `• 정산 인원: ${splitCount}명 (1인당 ${perPersonShare.toLocaleString()}원)\n\n`;
-            text += `[상세 지출 항목]\n`;
-
-            expenses.forEach(e => {
-                text += `- ${e.title}: ${e.amount.toLocaleString()}원 (${e.payer})\n`;
+            settlementMembers.forEach(m => { payerPaidMap[m] = 0; });
+            expenses.forEach(item => {
+                totalSum += item.amount;
+                if (payerPaidMap[item.payer] !== undefined) payerPaidMap[item.payer] += item.amount;
+                else payerPaidMap[item.payer] = item.amount;
             });
 
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('정산 내역이 클립보드에 복사되었습니다! 📋', '✅');
+            const targetPerPerson = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalSum / splitCount);
+
+            let txt = `💰 [2026 후쿠오카 골프 & 시티 투어 정산서]\n\n`;
+            txt += `📌 총 지출 금액: ${totalSum.toLocaleString()}원\n`;
+            txt += `👥 정산 인원: ${splitCount}명 (1인당 부담금: ${targetPerPerson.toLocaleString()}원)\n\n`;
+            txt += `--- [개인별 정산 현황] ---\n`;
+
+            settlementMembers.forEach(m => {
+                const paid = payerPaidMap[m] || 0;
+                const balance = paid - targetPerPerson;
+                if (balance > 0) {
+                    txt += `▶ ${m}: ${balance.toLocaleString()}원 [받기]\n`;
+                } else if (balance < 0) {
+                    txt += `▶ ${m}: ${Math.abs(balance).toLocaleString()}원 [보내기]\n`;
+                } else {
+                    txt += `▶ ${m}: 0원 (정산 완료)\n`;
+                }
+            });
+
+            navigator.clipboard.writeText(txt).then(() => {
+                showToast('정산 내역이 클립보드에 복사되었습니다! 카톡에 붙여넣으세요.', '📋');
+            }).catch(err => {
+                showToast('복사 실패. 권한을 확인해주세요.', '❌');
             });
         }
 
         // ==========================================
-        // 모달 & 토스트 알림 공통 유틸
+        // 메모(NOTE) 관련 핵심 기능 복구
         // ==========================================
-        function showToast(message, icon = 'ℹ️') {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toastMsg');
-            const toastIcon = document.getElementById('toastIcon');
+        function saveNewNote() {
+            const input = document.getElementById('newNoteInput');
+            if(!input) return;
 
-            if(!toast) return;
+            const text = input.value.trim();
+            if (!text) {
+                showToast('메모 내용을 입력해주세요.', '⚠️');
+                return;
+            }
 
-            toastIcon.innerText = icon;
-            toastMsg.innerText = message;
+            const now = new Date();
+            const timeStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-            toast.classList.remove('opacity-0', 'pointer-events-none');
-            toast.classList.add('opacity-100');
+            notesHistory.unshift({
+                id: Date.now(),
+                content: text,
+                date: timeStr
+            });
 
-            setTimeout(() => {
-                toast.classList.remove('opacity-100');
-                toast.classList.add('opacity-0', 'pointer-events-none');
-            }, 2500);
+            input.value = '';
+            renderNotesHistory();
+            saveSettlementData();
+            showToast('새 메모가 추가 및 저장되었습니다! 📝', '✅');
         }
 
+        function deleteNote(id) {
+            notesHistory = notesHistory.filter(n => n.id !== id);
+            renderNotesHistory();
+            saveSettlementData();
+            showToast('메모가 삭제되었습니다.', '🗑');
+        }
+
+        function clearAllNotes() {
+            if (notesHistory.length === 0) return;
+            if (confirm('저장된 모든 메모를 삭제하시겠습니까?')) {
+                notesHistory = [];
+                renderNotesHistory();
+                saveSettlementData();
+                showToast('모든 메모가 초기화되었습니다.', '🧹');
+            }
+        }
+
+        function renderNotesHistory() {
+            const container = document.getElementById('notesHistoryContainer');
+            const badge = document.getElementById('noteCountBadge');
+            const searchInput = document.getElementById('noteSearchInput');
+            if (!container) return;
+
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const filteredNotes = notesHistory.filter(n => n.content.toLowerCase().includes(query));
+
+            if (badge) badge.innerText = filteredNotes.length;
+
+            if (filteredNotes.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">저장된 메모가 없습니다.</p>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            filteredNotes.forEach(n => {
+                const card = document.createElement('div');
+                card.className = "p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 relative group hover:border-amber-300 transition";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between text-[11px] text-slate-400 border-b border-slate-200/60 pb-1.5">
+                        <span class="font-semibold text-slate-500"><i class="fa-regular fa-clock mr-1"></i>${n.date}</span>
+                        <button type="button" onclick="deleteNote(${n.id})" class="text-slate-400 hover:text-rose-500 transition text-xs cursor-pointer" title="메모 삭제">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="text-xs sm:text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(n.content)}</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function copyAllNotesText() {
+            if (notesHistory.length === 0) {
+                showToast('복사할 메모가 없습니다.', '⚠️');
+                return;
+            }
+
+            let txt = `📝 [2026 후쿠오카 여행 작성 메모 전체]\n\n`;
+            notesHistory.forEach((n, idx) => {
+                txt += `[메모 ${idx + 1}] (${n.date})\n${n.content}\n\n`;
+            });
+
+            navigator.clipboard.writeText(txt).then(() => {
+                showToast('전체 메모가 복사되었습니다!', '📋');
+            }).catch(() => {
+                showToast('복사 실패. 권한을 확인해주세요.', '❌');
+            });
+        }
+
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // ==========================================
+        // 공유 및 모달 관리
+        // ==========================================
         function openImageModal(src, title = '이미지 미리보기') {
-            const modal = document.getElementById('imageModal');
-            const img = document.getElementById('modalImageElement');
-            const titleEl = document.getElementById('imageModalTitle');
-
-            if(img) img.src = src;
-            if(titleEl) titleEl.innerText = title;
-            if(modal) modal.classList.remove('hidden');
+            document.getElementById('modalImageElement').src = src;
+            document.getElementById('imageModalTitle').innerText = title;
+            document.getElementById('imageModal').classList.remove('hidden');
         }
 
         function closeImageModal() {
-            const modal = document.getElementById('imageModal');
-            if(modal) modal.classList.add('hidden');
+            document.getElementById('imageModal').classList.add('hidden');
         }
 
         function openShareModal() {
-            const modal = document.getElementById('shareModal');
-            if(modal) modal.classList.remove('hidden');
+            document.getElementById('shareModal').classList.remove('hidden');
         }
 
         function closeShareModal() {
-            const modal = document.getElementById('shareModal');
-            if(modal) modal.classList.add('hidden');
-        }
-
-        function copyFormattedScoreText() {
-            let text = `[⛳ 2026 후쿠오카 골프 스코어 요약]\n\n`;
-            players.forEach((p, idx) => {
-                const r1 = document.getElementById(`r1_${idx}`)?.value || '-';
-                const r2 = document.getElementById(`r2_${idx}`)?.value || '-';
-                const r3 = document.getElementById(`r3_${idx}`)?.value || '-';
-                const r4 = document.getElementById(`r4_${idx}`)?.value || '-';
-                text += `• ${p}: 1R(${r1}) | 2R(${r2}) | 3R(${r3}) | 4R(${r4})\n`;
-            });
-
-            navigator.clipboard.writeText(text).then(() => {
-                closeShareModal();
-                showToast('스코어 요약이 카톡용으로 복사되었습니다! 📋', '✅');
-            });
+            document.getElementById('shareModal').classList.add('hidden');
         }
 
         function copyCurrentLink() {
             navigator.clipboard.writeText(window.location.href).then(() => {
+                showToast('링크가 복사되었습니다! 원하는 곳에 공유하세요.', '🔗');
                 closeShareModal();
-                showToast('현재 페이지 링크가 복사되었습니다! 🔗', '✅');
             });
         }
 
-        function shareKakao() {
-            openShareModal();
+        function copyFormattedScoreText() {
+            let txt = `⛳ [2026 후쿠오카 골프 스코어 요약]\n\n`;
+            const rounds = ['r1', 'r2', 'r3', 'r4'];
+            const roundNames = [
+                document.getElementById('name_r1')?.value || '1R',
+                document.getElementById('name_r2')?.value || '2R',
+                document.getElementById('name_r3')?.value || '3R',
+                document.getElementById('name_r4')?.value || '4R'
+            ];
+
+            players.forEach((player, pIndex) => {
+                let scores = rounds.map(r => document.getElementById(`${r}_${pIndex}`)?.value || '-').join(' / ');
+                txt += `${player}: ${scores}\n`;
+            });
+
+            navigator.clipboard.writeText(txt).then(() => {
+                showToast('스코어 요약이 복사되었습니다!', '📋');
+                closeShareModal();
+            });
         }
     </script>
 </body>
