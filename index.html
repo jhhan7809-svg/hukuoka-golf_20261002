@@ -125,7 +125,6 @@
 
     <!-- TAB 1: 개요 & 간편일정 -->
     <div id="overview" class="tab-content active max-w-3xl mx-auto px-4 mt-2 space-y-4">
-        <!-- 멤버 카드 -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
             <h3 class="text-slate-900 font-bold text-base flex items-center mb-3">
                 <i class="fa-solid fa-users text-blue-500 mr-2"></i> 여행 동반자 (8명)
@@ -142,7 +141,6 @@
             </div>
         </div>
 
-        <!-- 항공편 정보 -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
             <h3 class="text-slate-900 font-bold text-base flex items-center mb-3">
                 <i class="fa-solid fa-plane text-blue-500 mr-2"></i> 항공편 편성
@@ -169,7 +167,6 @@
             </div>
         </div>
 
-        <!-- 일차별 간편 타임라인 -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
             <h3 class="text-slate-900 font-bold text-base flex items-center mb-4">
                 <i class="fa-solid fa-calendar-days text-blue-500 mr-2"></i> 주요 일정 요약
@@ -209,7 +206,6 @@
 
     <!-- TAB 2: 숙소 & 골프장 -->
     <div id="places" class="tab-content max-w-3xl mx-auto px-4 mt-2 space-y-4">
-        <!-- 숙소 안내 -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
             <div class="flex items-center justify-between mb-3">
                 <h3 class="text-slate-900 font-bold text-base flex items-center">
@@ -266,7 +262,6 @@
             </div>
         </div>
 
-        <!-- 골프장 목록 -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
             <h3 class="text-slate-900 font-bold text-base flex items-center mb-3">
                 <i class="fa-solid fa-flag text-emerald-600 mr-2"></i> 골프장 디렉토리
@@ -360,7 +355,6 @@
             </div>
         </div>
 
-        <!-- 라운드별 사진(스코어카드) 첨부 카드 -->
         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-3">
             <h4 class="font-bold text-slate-900 text-sm flex items-center">
                 <i class="fa-solid fa-camera text-blue-600 mr-2"></i> 라운드별 스코어카드 사진 다중 첨부
@@ -423,9 +417,8 @@
         </div>
     </div>
 
-    <!-- TAB 4: 정산 (지출 내역 및 N분의 1 자동 계산) -->
+    <!-- TAB 4: 정산 -->
     <div id="settlement" class="tab-content max-w-3xl mx-auto px-4 mt-2 space-y-4">
-        <!-- 정산 참여 인원 설정 카드 -->
         <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 space-y-3">
             <div class="flex items-center justify-between flex-wrap gap-2">
                 <h3 class="text-slate-900 font-bold text-sm sm:text-base flex items-center">
@@ -442,19 +435,16 @@
                 <input type="number" id="settlementMemberCount" value="8" min="1" max="30" onchange="adjustSettlementMembersCount()" class="w-16 px-2.5 py-1.5 border border-slate-300 rounded-lg font-bold text-center text-blue-700 focus:outline-none focus:border-blue-500">
             </div>
 
-            <!-- 동적 인원 이름 태그/입력 컨테이너 -->
             <div id="settlementMembersContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
                 <!-- Populated dynamically -->
             </div>
         </div>
 
-        <!-- 정산 지출 등록 및 요약 -->
         <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 space-y-4">
             <h3 class="text-slate-900 font-bold text-sm sm:text-base flex items-center">
                 <i class="fa-solid fa-calculator text-blue-600 mr-2"></i> 지출 내역 및 영수증 첨부
             </h3>
 
-            <!-- 입력 폼 -->
             <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs space-y-2.5">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div>
@@ -488,7 +478,6 @@
                 </button>
             </div>
 
-            <!-- 정산 리스트 -->
             <div class="space-y-2">
                 <div class="flex items-center justify-between text-xs font-bold text-slate-700 px-1">
                     <span>지출 항목별 상세 내역</span>
@@ -499,14 +488,12 @@
                 </div>
             </div>
 
-            <!-- 정산 종합 요약 카드 -->
             <div class="bg-blue-50/70 p-4 rounded-xl border border-blue-100 text-xs space-y-3">
                 <div class="flex justify-between items-center font-bold text-blue-900 text-sm sm:text-base border-b border-blue-200/60 pb-2">
                     <span>총 지출 합계 (누적)</span>
                     <span id="totalExpenseDisplay" class="text-blue-700 text-base sm:text-lg">0 원</span>
                 </div>
                 
-                <!-- 1인당 기본 분담금 수정 컨트롤 -->
                 <div class="flex items-center justify-between gap-2">
                     <span class="font-bold text-slate-700">1인당 기본 분담금 (N/1):</span>
                     <div class="flex items-center space-x-1">
@@ -519,7 +506,6 @@
                 </div>
             </div>
 
-            <!-- 개인별 정산 리포트 (받을 돈 / 줄 돈 현황) -->
             <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm space-y-3">
                 <h4 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center justify-between border-b border-slate-100 pb-2">
                     <span><i class="fa-solid fa-file-invoice-dollar text-emerald-600 mr-1.5"></i> 개인별 최종 입금/환급 정산서</span>
@@ -537,9 +523,8 @@
         </div>
     </div>
 
-    <!-- TAB 5: 메모 (누적 저장 및 날짜별 이력 관리) -->
+    <!-- TAB 5: 메모 -->
     <div id="note" class="tab-content max-w-3xl mx-auto px-4 mt-2 space-y-4">
-        <!-- 새 메모 작성 카드 -->
         <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 space-y-3">
             <div class="flex items-center justify-between flex-wrap gap-2">
                 <h3 class="text-slate-900 font-bold text-sm sm:text-base flex items-center">
@@ -554,7 +539,6 @@
             <textarea id="newNoteInput" rows="4" placeholder="준비물 체크리스트, 방문할 맛집, 기타 주의사항 등을 자유롭게 기재해 두세요..." class="w-full p-3 border border-slate-200 rounded-xl text-xs sm:text-sm leading-relaxed focus:outline-none focus:border-amber-500 resize-y bg-slate-50/50 min-h-[90px]"></textarea>
         </div>
 
-        <!-- 날짜별 메모 이력 리스트 및 검색 기능 -->
         <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
                 <h3 class="text-slate-900 font-bold text-sm sm:text-base flex items-center">
@@ -569,7 +553,6 @@
                 </div>
             </div>
 
-            <!-- 메모 검색 입력창 -->
             <div class="relative">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                     <i class="fa-solid fa-magnifying-glass text-xs"></i>
@@ -577,7 +560,6 @@
                 <input type="text" id="noteSearchInput" oninput="renderNotesHistory()" placeholder="저장된 메모 내용 검색..." class="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-amber-500">
             </div>
 
-            <!-- 메모 리스트 컨테이너 -->
             <div id="notesHistoryContainer" class="space-y-3 pt-1">
                 <!-- Dynamically loaded -->
             </div>
@@ -600,13 +582,13 @@
         </div>
     </div>
 
-    <!-- Custom Toast Notification -->
+    <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-full shadow-lg border border-slate-700/50 opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center space-x-2">
         <span id="toastIcon">ℹ️</span>
         <span id="toastMsg">알림 메세지</span>
     </div>
 
-    <!-- Kakao Share / Web Share Dialog Modal -->
+    <!-- Kakao Share Modal -->
     <div id="shareModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -654,7 +636,6 @@
         let notesHistory = [];
         let customPerPersonShare = null;
 
-        // Toast 함수
         function showToast(msg, icon = 'ℹ️') {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toastMsg');
@@ -672,7 +653,6 @@
             }, 3000);
         }
 
-        // 탭 전환
         function switchTab(tabId) {
             const contents = document.querySelectorAll('.tab-content');
             contents.forEach(el => {
@@ -701,11 +681,9 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // Firebase 실시간 동기화 수신
         function initFirebaseListeners() {
             if (!window.db) return;
 
-            // 1. 스코어 실시간 리스너
             window.onSnapshot(window.doc(window.db, "fukuokaTour", FIREBASE_SCORE_DOC), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
@@ -732,7 +710,6 @@
                 }
             });
 
-            // 2. 정산 & 메모 실시간 리스너
             window.onSnapshot(window.doc(window.db, "fukuokaTour", FIREBASE_SETTLEMENT_DOC), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
@@ -755,7 +732,6 @@
             });
         }
 
-        // 초기 스코어 테이블 렌더링
         function renderTable() {
             const tbody = document.getElementById('scoreBody');
             if(!tbody) return;
@@ -967,7 +943,7 @@
         }
 
         // ==========================================
-        // 정산(SETTLEMENT) & 메모(NOTES) 로직
+        // 정산(SETTLEMENT) 로직
         // ==========================================
         function renderSettlementMembersInputs() {
             const container = document.getElementById('settlementMembersContainer');
@@ -1135,7 +1111,7 @@
 
             if (expenses.length === 0) {
                 list.innerHTML = '<p class="text-slate-400 text-center py-3">등록된 지출 내역이 없습니다.</p>';
-                totalDisplay.innerText = '0 원';
+                totalDisplay.innerText = '0 원/엔';
                 reportContainer.innerHTML = '<p class="text-slate-400 text-center py-2 text-xs">등록된 지출 내역이 없습니다.</p>';
                 return;
             }
@@ -1165,55 +1141,48 @@
                 const div = document.createElement('div');
                 div.className = "p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5";
                 
-                let receiptBtn = item.receipt ? `<button type="button" onclick="openImageModal('${item.receipt}', '${item.title} 영수증')" class="text-xs text-blue-600 underline font-semibold"><i class="fa-solid fa-receipt mr-1"></i>영수증 보기</button>` : '';
+                let receiptBtn = item.receipt ? `<button type="button" onclick="openImageModal('${item.receipt}', '${item.title} 영수증')" class="text-blue-600 font-bold underline ml-2"><i class="fa-solid fa-receipt mr-1"></i>영수증 보기</button>` : '';
 
                 div.innerHTML = `
-                    <div class="flex items-center justify-between flex-wrap gap-1">
-                        <div>
-                            <span class="font-bold text-slate-900 text-xs sm:text-sm">${item.title}</span>
-                            <span class="text-slate-500 text-[11px] ml-1.5">(결제자: <b>${item.payer}</b>)</span>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <span class="font-bold text-blue-600 text-xs sm:text-sm">${item.amount.toLocaleString()}</span>
-                            <button type="button" onclick="deleteExpense(${item.id})" class="text-slate-400 hover:text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button>
-                        </div>
+                    <div class="flex items-center justify-between font-bold text-slate-800">
+                        <span>${item.title}</span>
+                        <span class="text-blue-600">${item.amount.toLocaleString()} 원/엔</span>
                     </div>
-                    ${receiptBtn ? `<div>${receiptBtn}</div>` : ''}
+                    <div class="flex items-center justify-between text-[11px] text-slate-500">
+                        <span>결제: <strong class="text-slate-700">${item.payer}</strong> ${item.account ? `(${item.account})` : ''} ${receiptBtn}</span>
+                        <button type="button" onclick="deleteExpense(${item.id})" class="text-rose-500 hover:underline">삭제</button>
+                    </div>
                 `;
                 list.appendChild(div);
             });
 
-            totalDisplay.innerText = `${totalSum.toLocaleString()} 원`;
+            totalDisplay.innerText = `${totalSum.toLocaleString()} 원/엔`;
 
-            // 개인별 정산 금액 산출
-            const targetPerPerson = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalSum / splitCount);
-            
+            const perPersonCost = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalSum / splitCount);
+
             reportContainer.innerHTML = '';
             settlementMembers.forEach(m => {
                 const paid = payerPaidMap[m] || 0;
-                const balance = paid - targetPerPerson;
-                const account = payerAccountMap[m] ? `<div class="text-[11px] text-slate-500 mt-0.5">계좌: ${payerAccountMap[m]}</div>` : '';
+                const balance = paid - perPersonCost;
+                const acc = payerAccountMap[m] ? ` | 계좌: ${payerAccountMap[m]}` : '';
 
-                let statusBadge = '';
+                let statusText = '';
                 if (balance > 0) {
-                    statusBadge = `<span class="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">${balance.toLocaleString()} 원 받기</span>`;
+                    statusText = `<span class="text-emerald-600 font-bold">+${balance.toLocaleString()} 원/엔 (받을 돈)</span>`;
                 } else if (balance < 0) {
-                    statusBadge = `<span class="text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">${Math.abs(balance).toLocaleString()} 원 보내기</span>`;
+                    statusText = `<span class="text-rose-600 font-bold">${balance.toLocaleString()} 원/엔 (보낼 돈)</span>`;
                 } else {
-                    statusBadge = `<span class="text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded">정산 완료 (0원)</span>`;
+                    statusText = `<span class="text-slate-500 font-bold">0 원/엔 (정산 완료)</span>`;
                 }
 
                 const card = document.createElement('div');
-                card.className = "p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex flex-col justify-between";
+                card.className = "p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs";
                 card.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <span class="font-bold text-slate-900 text-xs">${m}</span>
-                            <span class="text-[11px] text-slate-500 ml-1">(결제: ${paid.toLocaleString()}원)</span>
-                        </div>
-                        <div>${statusBadge}</div>
+                    <div>
+                        <span class="font-bold text-slate-900">${m}</span>
+                        <span class="text-[11px] text-slate-500 block">총 결제액: ${paid.toLocaleString()} 원/엔 ${acc}</span>
                     </div>
-                    ${account}
+                    <div class="text-right">${statusText}</div>
                 `;
                 reportContainer.appendChild(card);
             });
@@ -1221,73 +1190,74 @@
 
         function copySettlementText() {
             if (expenses.length === 0) {
-                showToast('복사할 정산 내역이 없습니다.', '⚠️');
+                showToast('공유할 정산 내역이 없습니다.', '⚠️');
                 return;
             }
 
-            const splitCount = settlementMembers.length > 0 ? settlementMembers.length : 1;
             let totalSum = 0;
             let payerPaidMap = {};
+            settlementMembers.forEach(m => payerPaidMap[m] = 0);
 
-            settlementMembers.forEach(m => { payerPaidMap[m] = 0; });
-            expenses.forEach(item => {
-                totalSum += item.amount;
-                if (payerPaidMap[item.payer] !== undefined) payerPaidMap[item.payer] += item.amount;
-                else payerPaidMap[item.payer] = item.amount;
+            expenses.forEach(e => {
+                totalSum += e.amount;
+                if (payerPaidMap[e.payer] !== undefined) payerPaidMap[e.payer] += e.amount;
+                else payerPaidMap[e.payer] = e.amount;
             });
 
-            const targetPerPerson = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalSum / splitCount);
+            const splitCount = settlementMembers.length > 0 ? settlementMembers.length : 1;
+            const perPersonCost = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalSum / splitCount);
 
-            let txt = `💰 [2026 후쿠오카 골프 & 시티 투어 정산서]\n\n`;
-            txt += `📌 총 지출 금액: ${totalSum.toLocaleString()}원\n`;
-            txt += `👥 정산 인원: ${splitCount}명 (1인당 부담금: ${targetPerPerson.toLocaleString()}원)\n\n`;
-            txt += `--- [개인별 정산 현황] ---\n`;
+            let text = `💰 [2026 후쿠오카 투어 정산 내역]\n`;
+            text += `------------------------------------\n`;
+            text += `▪ 총 지출: ${totalSum.toLocaleString()} 원/엔\n`;
+            text += `▪ 1인당 부담금 (${splitCount}명): ${perPersonCost.toLocaleString()} 원/엔\n\n`;
+            text += `[개인별 입금/환급 현황]\n`;
 
             settlementMembers.forEach(m => {
                 const paid = payerPaidMap[m] || 0;
-                const balance = paid - targetPerPerson;
+                const balance = paid - perPersonCost;
                 if (balance > 0) {
-                    txt += `▶ ${m}: ${balance.toLocaleString()}원 [받기]\n`;
+                    text += `- ${m}: +${balance.toLocaleString()} 원/엔 (환급받기)\n`;
                 } else if (balance < 0) {
-                    txt += `▶ ${m}: ${Math.abs(balance).toLocaleString()}원 [보내기]\n`;
+                    text += `- ${m}: ${Math.abs(balance).toLocaleString()} 원/엔 입금 필요\n`;
                 } else {
-                    txt += `▶ ${m}: 0원 (정산 완료)\n`;
+                    text += `- ${m}: 0 원/엔 (정산 완료)\n`;
                 }
             });
 
-            navigator.clipboard.writeText(txt).then(() => {
-                showToast('정산 내역이 클립보드에 복사되었습니다! 카톡에 붙여넣으세요.', '📋');
-            }).catch(err => {
-                showToast('복사 실패. 권한을 확인해주세요.', '❌');
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('정산 요약 텍스트가 복사되었습니다! 카톡에 붙여넣으세요.', '📋');
             });
         }
 
         // ==========================================
-        // 메모(NOTE) 관련 핵심 기능 복구
+        // 메모(NOTE) CRUD 및 누적 저장 로직
         // ==========================================
         function saveNewNote() {
             const input = document.getElementById('newNoteInput');
-            if(!input) return;
+            if (!input) return;
+            const content = input.value.trim();
 
-            const text = input.value.trim();
-            if (!text) {
-                showToast('메모 내용을 입력해주세요.', '⚠️');
+            if (!content) {
+                showToast('메모 내용을 입력해 주세요.', '⚠️');
                 return;
             }
 
             const now = new Date();
-            const timeStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-            notesHistory.unshift({
+            const newNote = {
                 id: Date.now(),
-                content: text,
-                date: timeStr
-            });
+                date: dateStr,
+                content: content
+            };
 
+            notesHistory.unshift(newNote);
             input.value = '';
+
             renderNotesHistory();
             saveSettlementData();
-            showToast('새 메모가 추가 및 저장되었습니다! 📝', '✅');
+            showToast('메모가 타임라인에 누적 저장되었습니다! 📝', '✅');
         }
 
         function deleteNote(id) {
@@ -1299,7 +1269,7 @@
 
         function clearAllNotes() {
             if (notesHistory.length === 0) return;
-            if (confirm('저장된 모든 메모를 삭제하시겠습니까?')) {
+            if (confirm('모든 메모 내역을 삭제하시겠습니까?')) {
                 notesHistory = [];
                 renderNotesHistory();
                 saveSettlementData();
@@ -1313,28 +1283,26 @@
             const searchInput = document.getElementById('noteSearchInput');
             if (!container) return;
 
-            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
             const filteredNotes = notesHistory.filter(n => n.content.toLowerCase().includes(query));
 
             if (badge) badge.innerText = filteredNotes.length;
 
             if (filteredNotes.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">저장된 메모가 없습니다.</p>`;
+                container.innerHTML = '<p class="text-slate-400 text-center py-6 text-xs">저장된 메모가 없습니다.</p>';
                 return;
             }
 
             container.innerHTML = '';
-            filteredNotes.forEach(n => {
+            filteredNotes.forEach(note => {
                 const card = document.createElement('div');
-                card.className = "p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2 relative group hover:border-amber-300 transition";
+                card.className = "p-3.5 bg-amber-50/50 rounded-xl border border-amber-200/60 space-y-2 relative group text-xs";
                 card.innerHTML = `
-                    <div class="flex items-center justify-between text-[11px] text-slate-400 border-b border-slate-200/60 pb-1.5">
-                        <span class="font-semibold text-slate-500"><i class="fa-regular fa-clock mr-1"></i>${n.date}</span>
-                        <button type="button" onclick="deleteNote(${n.id})" class="text-slate-400 hover:text-rose-500 transition text-xs cursor-pointer" title="메모 삭제">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                    <div class="flex items-center justify-between text-[11px] text-amber-800 font-bold border-b border-amber-200/40 pb-1.5">
+                        <span>📅 ${note.date}</span>
+                        <button type="button" onclick="deleteNote(${note.id})" class="text-rose-500 hover:underline">삭제</button>
                     </div>
-                    <div class="text-xs sm:text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(n.content)}</div>
+                    <div class="text-slate-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(note.content)}</div>
                 `;
                 container.appendChild(card);
             });
@@ -1342,75 +1310,77 @@
 
         function copyAllNotesText() {
             if (notesHistory.length === 0) {
-                showToast('복사할 메모가 없습니다.', '⚠️');
+                showToast('복사할 메모가 없습니다.', '⚠️️');
                 return;
             }
 
-            let txt = `📝 [2026 후쿠오카 여행 작성 메모 전체]\n\n`;
+            let text = `📝 [2026 후쿠오카 투어 메모 전체 내역]\n------------------------------------\n`;
             notesHistory.forEach((n, idx) => {
-                txt += `[메모 ${idx + 1}] (${n.date})\n${n.content}\n\n`;
+                text += `[${idx+1}] ${n.date}\n${n.content}\n\n`;
             });
 
-            navigator.clipboard.writeText(txt).then(() => {
+            navigator.clipboard.writeText(text).then(() => {
                 showToast('전체 메모가 복사되었습니다!', '📋');
-            }).catch(() => {
-                showToast('복사 실패. 권한을 확인해주세요.', '❌');
             });
         }
 
         function escapeHtml(text) {
-            return text
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
         // ==========================================
-        // 공유 및 모달 관리
+        // 모달 및 공유 제어 함수
         // ==========================================
-        function openImageModal(src, title = '이미지 미리보기') {
-            document.getElementById('modalImageElement').src = src;
-            document.getElementById('imageModalTitle').innerText = title;
-            document.getElementById('imageModal').classList.remove('hidden');
-        }
-
-        function closeImageModal() {
-            document.getElementById('imageModal').classList.add('hidden');
-        }
-
         function openShareModal() {
-            document.getElementById('shareModal').classList.remove('hidden');
+            const modal = document.getElementById('shareModal');
+            if (modal) modal.classList.remove('hidden');
         }
 
         function closeShareModal() {
-            document.getElementById('shareModal').classList.add('hidden');
+            const modal = document.getElementById('shareModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function openImageModal(src, title = '이미지 미리보기') {
+            const modal = document.getElementById('imageModal');
+            const img = document.getElementById('modalImageElement');
+            const titleEl = document.getElementById('imageModalTitle');
+
+            if (modal && img) {
+                img.src = src;
+                if (titleEl) titleEl.innerText = title;
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            if (modal) modal.classList.add('hidden');
         }
 
         function copyCurrentLink() {
             navigator.clipboard.writeText(window.location.href).then(() => {
-                showToast('링크가 복사되었습니다! 원하는 곳에 공유하세요.', '🔗');
+                showToast('현재 페이지 링크가 복사되었습니다!', '🔗');
                 closeShareModal();
             });
         }
 
         function copyFormattedScoreText() {
-            let txt = `⛳ [2026 후쿠오카 골프 스코어 요약]\n\n`;
-            const rounds = ['r1', 'r2', 'r3', 'r4'];
-            const roundNames = [
-                document.getElementById('name_r1')?.value || '1R',
-                document.getElementById('name_r2')?.value || '2R',
-                document.getElementById('name_r3')?.value || '3R',
-                document.getElementById('name_r4')?.value || '4R'
-            ];
+            const r1 = document.getElementById('name_r1')?.value || '1R';
+            const r2 = document.getElementById('name_r2')?.value || '2R';
+            const r3 = document.getElementById('name_r3')?.value || '3R';
+            const r4 = document.getElementById('name_r4')?.value || '4R';
 
-            players.forEach((player, pIndex) => {
-                let scores = rounds.map(r => document.getElementById(`${r}_${pIndex}`)?.value || '-').join(' / ');
-                txt += `${player}: ${scores}\n`;
+            let text = `⛳ [2026 후쿠오카 골프 실시간 스코어]\n------------------------------------\n`;
+            players.forEach((p, idx) => {
+                const s1 = document.getElementById(`r1_${idx}`)?.value || '-';
+                const s2 = document.getElementById(`r2_${idx}`)?.value || '-';
+                const s3 = document.getElementById(`r3_${idx}`)?.value || '-';
+                const s4 = document.getElementById(`r4_${idx}`)?.value || '-';
+                text += `${p}: ${r1}(${s1}) | ${r2}(${s2}) | ${r3}(${s3}) | ${r4}(${s4})\n`;
             });
 
-            navigator.clipboard.writeText(txt).then(() => {
+            navigator.clipboard.writeText(text).then(() => {
                 showToast('스코어 요약이 복사되었습니다!', '📋');
                 closeShareModal();
             });
