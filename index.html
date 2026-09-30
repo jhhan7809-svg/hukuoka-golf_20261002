@@ -759,7 +759,7 @@
                     <td class="py-3 px-1"><input type="number" id="hcp_${pIndex}" value="${hcp}" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
                     <td class="py-3 px-1"><input type="number" id="r1_${pIndex}" value="" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
                     <td class="py-3 px-1"><input type="number" id="r2_${pIndex}" value="" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
-                    <td class="py-3 px-1"><input type="number" id="r3_${pIndex}" value="" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
+                    <td class="py-3 px-1"><input type="number" id="r3_${pIndex}" value="" oninput="calculateRankings()" class="w-full text-center font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
                     <td class="py-3 px-1"><input type="number" id="r4_${pIndex}" value="" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
                     <td class="py-3 px-2 font-bold text-blue-700 bg-blue-50/30" id="avg_${pIndex}">-</td>
                 `;
@@ -953,6 +953,24 @@
                     }
                 }
             });
+        }
+
+        // ==========================================
+        // 정산 & 메모 공통 Firebase 저장 함수
+        // ==========================================
+        async function saveSettlementToFirebase() {
+            if (!window.db) return;
+            try {
+                await window.setDoc(window.doc(window.db, "fukuokaTour", FIREBASE_SETTLEMENT_DOC), {
+                    members: settlementMembers,
+                    expenses: expenses,
+                    notesHistory: notesHistory,
+                    customPerPersonShare: customPerPersonShare
+                });
+            } catch (e) {
+                console.error("Settlement/Notes Save Error:", e);
+                showToast('데이터 클라우드 동기화 실패', '❌');
+            }
         }
 
         // ==========================================
@@ -1181,17 +1199,17 @@
 
                     let badgeHtml = '';
                     if (balance > 0) {
-                        badgeHtml = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-xs">받을 금액: +${balance.toLocaleString()}</span>`;
+                        badgeHtml = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[11px]">+${balance.toLocaleString()} 환급 (받을 금액)</span>`;
                     } else if (balance < 0) {
-                        badgeHtml = `<span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded text-xs">보낼 금액: ${balance.toLocaleString()}</span>`;
+                        badgeHtml = `<span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded text-[11px]">${balance.toLocaleString()} 입금 (보낼 금액)</span>`;
                     } else {
-                        badgeHtml = `<span class="bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded text-xs">정산 완료 (0)</span>`;
+                        badgeHtml = `<span class="bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded text-[11px]">0 (정산 완료)</span>`;
                     }
 
                     const card = document.createElement('div');
-                    card.className = "bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-center justify-between text-xs";
+                    card.className = "p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between flex-wrap gap-1";
                     card.innerHTML = `
-                        <div class="font-bold text-slate-900">${m}</div>
+                        <div class="font-bold text-slate-800 text-xs sm:text-sm">${m}</div>
                         <div>${badgeHtml}</div>
                     `;
                     reportEl.appendChild(card);
@@ -1199,38 +1217,23 @@
             }
         }
 
-        async function saveSettlementToFirebase() {
-            if (!window.db) return;
-            const dataToSave = {
-                members: settlementMembers,
-                expenses: expenses,
-                notesHistory: notesHistory,
-                customPerPersonShare: customPerPersonShare
-            };
-            try {
-                await window.setDoc(window.doc(window.db, "fukuokaTour", FIREBASE_SETTLEMENT_DOC), dataToSave);
-            } catch(e) {
-                console.error("Settlement Save Error:", e);
-            }
-        }
-
         function copySettlementText() {
-            const totalAmount = expenses.reduce((sum, item) => sum + item.amount, 0);
             const N = settlementMembers.length || 1;
+            let totalAmount = expenses.reduce((sum, item) => sum + item.amount, 0);
             const perPerson = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalAmount / N);
 
-            let txt = `[2026 후쿠오카 골프 & 투어 최종 정산]\n`;
-            txt += `-----------------------------\n`;
-            txt += `총 지출: ${totalAmount.toLocaleString()} 원/엔\n`;
-            txt += `참가 인원: ${N}명 (1인당 부담금: ${perPerson.toLocaleString()} 원/엔)\n\n`;
+            let text = `[2026 후쿠오카 여행 정산 내역]\n`;
+            text += `---------------------------\n`;
+            text += `💰 총 지출: ${totalAmount.toLocaleString()}원/엔\n`;
+            text += `👥 정산 인원: ${N}명 (1인당 ${perPerson.toLocaleString()}원/엔)\n\n`;
+            text += `📌 지출 상세:\n`;
 
-            txt += `■ 지출 내역 상세:\n`;
-            expenses.forEach((item, idx) => {
-                txt += `${idx+1}. ${item.title}: ${item.amount.toLocaleString()} (결제: ${item.payer})\n`;
-                if(item.account) txt += `   ㄴ 계좌: ${item.account}\n`;
+            expenses.forEach((e, idx) => {
+                text += `${idx+1}. ${e.title}: ${e.amount.toLocaleString()}원/엔 (${e.payer})\n`;
             });
 
-            txt += `\n■ 개인별 정산 수수 내역:\n`;
+            text += `\n💌 개인별 입금/환급 금액:\n`;
+            
             const payerPaidMap = {};
             settlementMembers.forEach(m => payerPaidMap[m] = 0);
             expenses.forEach(item => {
@@ -1241,16 +1244,16 @@
                 const paid = payerPaidMap[m] || 0;
                 const balance = paid - perPerson;
                 if(balance > 0) {
-                    txt += `- ${m}: +${balance.toLocaleString()} (받을 금액)\n`;
+                    text += `- ${m}: +${balance.toLocaleString()}원/엔 (환급받기)\n`;
                 } else if(balance < 0) {
-                    txt += `- ${m}: ${balance.toLocaleString()} (보낼 금액)\n`;
+                    text += `- ${m}: ${Math.abs(balance).toLocaleString()}원/엔 (입금하기)\n`;
                 } else {
-                    txt += `- ${m}: 0 (정산 완료)\n`;
+                    text += `- ${m}: 0원/엔 (정산완료)\n`;
                 }
             });
 
-            navigator.clipboard.writeText(txt).then(() => {
-                showToast('정산 내역이 클립보드에 복사되었습니다! 카톡에 붙여넣으세요.', '📋');
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('정산 내역이 클립보드에 복사되었습니다!', '📋');
             }).catch(() => {
                 showToast('복사에 실패했습니다.', '❌');
             });
@@ -1260,17 +1263,17 @@
         // 메모(NOTE) 로직
         // ==========================================
         function saveNewNote() {
-            const textarea = document.getElementById('newNoteInput');
-            if(!textarea) return;
-            const content = textarea.value.trim();
+            const input = document.getElementById('newNoteInput');
+            if(!input) return;
 
+            const content = input.value.trim();
             if (!content) {
                 showToast('메모 내용을 입력해 주세요.', '⚠️');
                 return;
             }
 
             const now = new Date();
-            const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            const timeStr = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
             const newNote = {
                 id: Date.now(),
@@ -1278,12 +1281,12 @@
                 date: timeStr
             };
 
-            notesHistory.unshift(newNote);
-            textarea.value = '';
-
+            notesHistory.unshift(newNote); // 최신 메모가 맨 위에 오도록 추가
+            input.value = '';
+            
             renderNotesHistory();
             saveSettlementToFirebase();
-            showToast('새 메모가 추가되었습니다!', '📝');
+            showToast('새 메모가 누적 저장되었습니다!', '📝');
         }
 
         function deleteNote(id) {
@@ -1294,6 +1297,7 @@
         }
 
         function clearAllNotes() {
+            if (notesHistory.length === 0) return;
             if (confirm('저장된 모든 메모를 삭제하시겠습니까?')) {
                 notesHistory = [];
                 renderNotesHistory();
@@ -1306,12 +1310,13 @@
             const container = document.getElementById('notesHistoryContainer');
             const badge = document.getElementById('noteCountBadge');
             const searchInput = document.getElementById('noteSearchInput');
-            if(!container) return;
+            if (!container) return;
 
-            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
-            const filtered = notesHistory.filter(n => n.content.toLowerCase().includes(query));
+            const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            const filtered = notesHistory.filter(n => n.content.toLowerCase().includes(keyword));
 
-            if(badge) badge.innerText = notesHistory.length;
+            if (badge) badge.innerText = notesHistory.length;
+
             container.innerHTML = '';
 
             if (filtered.length === 0) {
@@ -1320,18 +1325,23 @@
             }
 
             filtered.forEach(note => {
-                const div = document.createElement('div');
-                div.className = "bg-amber-50/50 p-3.5 rounded-xl border border-amber-100 space-y-1.5 text-xs relative group";
-                div.innerHTML = `
-                    <div class="flex items-center justify-between text-slate-400 text-[11px]">
-                        <span><i class="fa-regular fa-clock mr-1"></i>${note.date}</span>
-                        <button type="button" onclick="deleteNote(${note.id})" class="text-slate-400 hover:text-rose-600 px-1 cursor-pointer" title="메모 삭제">
-                            <i class="fa-solid fa-trash-can text-xs"></i>
-                        </button>
+                const card = document.createElement('div');
+                card.className = "p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2 relative group hover:border-amber-300 transition";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between text-slate-400 text-[11px] border-b border-slate-200/60 pb-1.5">
+                        <span class="font-semibold text-slate-500"><i class="fa-regular fa-clock mr-1"></i>${note.date}</span>
+                        <div class="flex items-center space-x-2">
+                            <button type="button" onclick="copySingleNote('${note.id}')" class="hover:text-slate-700 transition" title="메모 복사">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                            <button type="button" onclick="deleteNote(${note.id})" class="hover:text-rose-600 transition" title="삭제">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
                     </div>
-                    <p class="text-slate-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(note.content)}</p>
+                    <div class="text-slate-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(note.content)}</div>
                 `;
-                container.appendChild(div);
+                container.appendChild(card);
             });
         }
 
@@ -1344,39 +1354,58 @@
                 .replace(/'/g, "&#039;");
         }
 
+        function copySingleNote(id) {
+            const note = notesHistory.find(n => n.id == id);
+            if (!note) return;
+
+            navigator.clipboard.writeText(note.content).then(() => {
+                showToast('선택한 메모가 복사되었습니다.', '📋');
+            });
+        }
+
         function copyAllNotesText() {
             if (notesHistory.length === 0) {
                 showToast('복사할 메모가 없습니다.', '⚠️');
                 return;
             }
 
-            let txt = `[2026 후쿠오카 여행 메모 모음]\n-----------------------------\n`;
-            notesHistory.forEach((n, idx) => {
-                txt += `${idx+1}. (${n.date})\n${n.content}\n\n`;
+            let text = `[2026 후쿠오카 여행 메모 모음]\n---------------------------\n\n`;
+            notesHistory.forEach((n, i) => {
+                text += `${i + 1}. (${n.date})\n${n.content}\n\n`;
             });
 
-            navigator.clipboard.writeText(txt).then(() => {
+            navigator.clipboard.writeText(text).then(() => {
                 showToast('전체 메모가 클립보드에 복사되었습니다!', '📋');
             });
         }
 
-        // 모달 및 공유 기능
-        function openImageModal(src, title) {
-            document.getElementById('modalImageElement').src = src;
-            document.getElementById('imageModalTitle').innerText = title || '이미지 미리보기';
-            document.getElementById('imageModal').classList.remove('hidden');
+        // ==========================================
+        // 모달 & 공유 공통 기능
+        // ==========================================
+        function openImageModal(src, title = '이미지 미리보기') {
+            const modal = document.getElementById('imageModal');
+            const img = document.getElementById('modalImageElement');
+            const titleEl = document.getElementById('imageModalTitle');
+            if(!modal || !img) return;
+
+            img.src = src;
+            if(titleEl) titleEl.innerText = title;
+            modal.classList.remove('hidden');
         }
 
         function closeImageModal() {
-            document.getElementById('imageModal').classList.add('hidden');
+            const modal = document.getElementById('imageModal');
+            if(modal) modal.classList.add('hidden');
         }
 
         function openShareModal() {
-            document.getElementById('shareModal').classList.remove('hidden');
+            const modal = document.getElementById('shareModal');
+            if(modal) modal.classList.remove('hidden');
         }
 
         function closeShareModal() {
-            document.getElementById('shareModal').classList.add('hidden');
+            const modal = document.getElementById('shareModal');
+            if(modal) modal.classList.add('hidden');
         }
 
         function copyCurrentLink() {
@@ -1387,6 +1416,7 @@
         }
 
         function copyFormattedScoreText() {
+            const rounds = ['r1', 'r2', 'r3', 'r4'];
             const roundNames = [
                 document.getElementById('name_r1')?.value || '1R',
                 document.getElementById('name_r2')?.value || '2R',
@@ -1394,18 +1424,30 @@
                 document.getElementById('name_r4')?.value || '4R'
             ];
 
-            let txt = `⛳ [2026 후쿠오카 골프 현황 요약]\n-----------------------------\n`;
-            
-            players.forEach((player, pIndex) => {
-                const r1 = document.getElementById(`r1_${pIndex}`)?.value || '-';
-                const r2 = document.getElementById(`r2_${pIndex}`)?.value || '-';
-                const r3 = document.getElementById(`r3_${pIndex}`)?.value || '-';
-                const r4 = document.getElementById(`r4_${pIndex}`)?.value || '-';
-                txt += `${player}: [1R] ${r1} | [2R] ${r2} | [3R] ${r3} | [4R] ${r4}\n`;
+            let text = `⛳ [2026 후쿠오카 골프 스코어 요약]\n`;
+            text += `---------------------------\n`;
+
+            rounds.forEach((r, idx) => {
+                let roundData = [];
+                players.forEach((p, pIdx) => {
+                    const hcp = parseFloat(document.getElementById(`hcp_${pIdx}`)?.value) || 0;
+                    const score = parseFloat(document.getElementById(`${r}_${pIdx}`)?.value);
+                    if(!isNaN(score)) {
+                        roundData.push({ name: p, gross: score, net: score - hcp });
+                    }
+                });
+
+                if(roundData.length > 0) {
+                    text += `\n📌 ${roundNames[idx]}:\n`;
+                    roundData.sort((a, b) => a.net - b.net);
+                    roundData.forEach((d, i) => {
+                        text += ` ${i+1}위 ${d.name} | Gross ${d.gross} (Net ${d.net})\n`;
+                    });
+                }
             });
 
-            navigator.clipboard.writeText(txt).then(() => {
-                showToast('스코어 요약 텍스트가 복사되었습니다!', '📋');
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('스코어 요약이 클립보드에 복사되었습니다!', '📋');
                 closeShareModal();
             });
         }
