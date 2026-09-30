@@ -35,7 +35,6 @@
     </style>
 
     <!-- Firebase SDK (Modular v9+) -->
-       <!-- Firebase SDK (Modular v9+) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -61,160 +60,9 @@
         // Firebase 로딩 후 테이블 렌더링 및 실시간 리스너 연결
         window.addEventListener('DOMContentLoaded', () => {
             if (typeof renderTable === 'function') renderTable();
-            initFirebaseListeners();
+            if (typeof initFirebaseListeners === 'function') initFirebaseListeners();
         });
     </script>
-
-    <!-- Script Application Logic -->
-    <script>
-        const players = ['원석', '종희', '선우', '영규', '지윤', '호준', '동민', '현주'];
-        const FIREBASE_SCORE_DOC = "fukuoka_scores_2026";
-        const FIREBASE_SETTLEMENT_DOC = "fukuoka_settlement_2026";
-
-        let roundPhotos = { r1: [], r2: [], r3: [], r4: [] };
-        let expenses = [];
-        let settlementMembers = [...players];
-        let notesHistory = [];
-        let customPerPersonShare = null;
-
-        function showToast(msg, icon = 'ℹ️') {
-            const toast = document.getElementById('toast');
-            const toastMsg = document.getElementById('toastMsg');
-            const toastIcon = document.getElementById('toastIcon');
-            if(!toast) return;
-
-            toastMsg.innerText = msg;
-            toastIcon.innerText = icon;
-            toast.classList.remove('opacity-0', 'pointer-events-none');
-            toast.classList.add('opacity-100');
-
-            setTimeout(() => {
-                toast.classList.remove('opacity-100');
-                toast.classList.add('opacity-0', 'pointer-events-none');
-            }, 3000);
-        }
-
-        function switchTab(tabId) {
-            const contents = document.querySelectorAll('.tab-content');
-            contents.forEach(el => {
-                el.classList.remove('active');
-                el.style.display = 'none';
-            });
-
-            const targetContent = document.getElementById(tabId);
-            if (targetContent) {
-                targetContent.classList.add('active');
-                targetContent.style.display = 'block';
-            }
-
-            const buttons = document.querySelectorAll('.tab-btn');
-            buttons.forEach(btn => {
-                btn.classList.remove('bg-white', 'text-slate-700', 'shadow-sm');
-                btn.classList.add('text-slate-600', 'hover:text-slate-900');
-            });
-
-            const targetBtn = document.getElementById('tab-' + tabId);
-            if (targetBtn) {
-                targetBtn.classList.remove('text-slate-600', 'hover:text-slate-900');
-                targetBtn.classList.add('bg-white', 'text-slate-700', 'shadow-sm');
-            }
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        // 입력 중인 Input 인지 확인하여 포커스 상실 방지
-        function updateInputValueIfUnfocused(id, value) {
-            const el = document.getElementById(id);
-            if (el && document.activeElement !== el) {
-                el.value = value || '';
-            }
-        }
-
-        function initFirebaseListeners() {
-            if (!window.db) return;
-
-            // 스코어 실시간 리스너
-            window.onSnapshot(window.doc(window.db, "fukuokaTour", FIREBASE_SCORE_DOC), (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.roundNames) {
-                        updateInputValueIfUnfocused('name_r1', data.roundNames.r1 || '1R (센트럴)');
-                        updateInputValueIfUnfocused('name_r2', data.roundNames.r2 || '2R (벳부)');
-                        updateInputValueIfUnfocused('name_r3', data.roundNames.r3 || '3R (유후)');
-                        updateInputValueIfUnfocused('name_r4', data.roundNames.r4 || '4R (로렐)');
-                    }
-                    if (data.roundPhotos) {
-                        roundPhotos = data.roundPhotos;
-                    }
-                    players.forEach((player, pIndex) => {
-                        if (data[player]) {
-                            updateInputValueIfUnfocused(`hcp_${pIndex}`, data[player].hcp);
-                            updateInputValueIfUnfocused(`r1_${pIndex}`, data[player].r1);
-                            updateInputValueIfUnfocused(`r2_${pIndex}`, data[player].r2);
-                            updateInputValueIfUnfocused(`r3_${pIndex}`, data[player].r3);
-                            updateInputValueIfUnfocused(`r4_${pIndex}`, data[player].r4);
-                        }
-                    });
-                    calculateRankings();
-                    updateRoundPhotoUI();
-                }
-            });
-
-            // 정산 & 메모 실시간 리스너
-            window.onSnapshot(window.doc(window.db, "fukuokaTour", FIREBASE_SETTLEMENT_DOC), (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.members && Array.isArray(data.members)) settlementMembers = data.members;
-                    if (data.expenses && Array.isArray(data.expenses)) expenses = data.expenses;
-                    if (data.notesHistory && Array.isArray(data.notesHistory)) notesHistory = data.notesHistory;
-                    if (data.customPerPersonShare !== undefined) customPerPersonShare = data.customPerPersonShare;
-
-                    const countInput = document.getElementById('settlementMemberCount');
-                    if (countInput && document.activeElement !== countInput) {
-                        countInput.value = settlementMembers.length;
-                    }
-
-                    const perPersonInput = document.getElementById('customPerPersonInput');
-                    if (perPersonInput && document.activeElement !== perPersonInput) {
-                        perPersonInput.value = customPerPersonShare !== null ? customPerPersonShare : '';
-                    }
-
-                    renderSettlementMembersInputs();
-                    updatePayerSelect();
-                    renderExpenses();
-                    renderNotesHistory();
-                }
-            });
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById('scoreBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-
-            players.forEach((player, pIndex) => {
-                let hcp = pIndex < 2 ? '10' : '15';
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition";
-                tr.innerHTML = `
-                    <td class="py-3 px-2 font-bold text-slate-900 whitespace-nowrap">${player}</td>
-                    <td class="py-3 px-1"><input type="number" id="hcp_${pIndex}" value="${hcp}" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
-                    <td class="py-3 px-1"><input type="number" id="r1_${pIndex}" value="" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
-                    <td class="py-3 px-1"><input type="number" id="r2_${pIndex}" value="" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
-                    <td class="py-3 px-1"><input type="number" id="r3_${pIndex}" value="" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
-                    <td class="py-3 px-1"><input type="number" id="r4_${pIndex}" value="" oninput="calculateRankings()" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
-                    <td class="py-3 px-2 font-bold text-blue-700 bg-blue-50/30" id="avg_${pIndex}">-</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            calculateRankings();
-            updateRoundPhotoUI();
-        }
-
-        // 이하 나머지 자바스크립트 함수(calculateRankings, saveScores, addExpense, saveNewNote 등)는 그대로 유지
-    </script>
-
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen pb-20">
 
@@ -833,28 +681,36 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        function updateInputValueIfUnfocused(id, value) {
+            const el = document.getElementById(id);
+            if (el && document.activeElement !== el) {
+                el.value = value || '';
+            }
+        }
+
         function initFirebaseListeners() {
             if (!window.db) return;
 
+            // 스코어 실시간 리스너
             window.onSnapshot(window.doc(window.db, "fukuokaTour", FIREBASE_SCORE_DOC), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     if (data.roundNames) {
-                        if(document.getElementById('name_r1')) document.getElementById('name_r1').value = data.roundNames.r1 || '1R (센트럴)';
-                        if(document.getElementById('name_r2')) document.getElementById('name_r2').value = data.roundNames.r2 || '2R (벳부)';
-                        if(document.getElementById('name_r3')) document.getElementById('name_r3').value = data.roundNames.r3 || '3R (유후)';
-                        if(document.getElementById('name_r4')) document.getElementById('name_r4').value = data.roundNames.r4 || '4R (로렐)';
+                        updateInputValueIfUnfocused('name_r1', data.roundNames.r1 || '1R (센트럴)');
+                        updateInputValueIfUnfocused('name_r2', data.roundNames.r2 || '2R (벳부)');
+                        updateInputValueIfUnfocused('name_r3', data.roundNames.r3 || '3R (유후)');
+                        updateInputValueIfUnfocused('name_r4', data.roundNames.r4 || '4R (로렐)');
                     }
                     if (data.roundPhotos) {
                         roundPhotos = data.roundPhotos;
                     }
                     players.forEach((player, pIndex) => {
                         if (data[player]) {
-                            if(document.getElementById(`hcp_${pIndex}`)) document.getElementById(`hcp_${pIndex}`).value = data[player].hcp || '';
-                            if(document.getElementById(`r1_${pIndex}`)) document.getElementById(`r1_${pIndex}`).value = data[player].r1 || '';
-                            if(document.getElementById(`r2_${pIndex}`)) document.getElementById(`r2_${pIndex}`).value = data[player].r2 || '';
-                            if(document.getElementById(`r3_${pIndex}`)) document.getElementById(`r3_${pIndex}`).value = data[player].r3 || '';
-                            if(document.getElementById(`r4_${pIndex}`)) document.getElementById(`r4_${pIndex}`).value = data[player].r4 || '';
+                            updateInputValueIfUnfocused(`hcp_${pIndex}`, data[player].hcp);
+                            updateInputValueIfUnfocused(`r1_${pIndex}`, data[player].r1);
+                            updateInputValueIfUnfocused(`r2_${pIndex}`, data[player].r2);
+                            updateInputValueIfUnfocused(`r3_${pIndex}`, data[player].r3);
+                            updateInputValueIfUnfocused(`r4_${pIndex}`, data[player].r4);
                         }
                     });
                     calculateRankings();
@@ -862,6 +718,7 @@
                 }
             });
 
+            // 정산 & 메모 실시간 리스너
             window.onSnapshot(window.doc(window.db, "fukuokaTour", FIREBASE_SETTLEMENT_DOC), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
@@ -871,10 +728,14 @@
                     if (data.customPerPersonShare !== undefined) customPerPersonShare = data.customPerPersonShare;
 
                     const countInput = document.getElementById('settlementMemberCount');
-                    if (countInput) countInput.value = settlementMembers.length;
+                    if (countInput && document.activeElement !== countInput) {
+                        countInput.value = settlementMembers.length;
+                    }
 
                     const perPersonInput = document.getElementById('customPerPersonInput');
-                    if (perPersonInput) perPersonInput.value = customPerPersonShare !== null ? customPerPersonShare : '';
+                    if (perPersonInput && document.activeElement !== perPersonInput) {
+                        perPersonInput.value = customPerPersonShare !== null ? customPerPersonShare : '';
+                    }
 
                     renderSettlementMembersInputs();
                     updatePayerSelect();
@@ -1107,94 +968,116 @@
                 div.className = "flex items-center space-x-1";
                 div.innerHTML = `
                     <span class="text-[10px] font-bold text-slate-400 w-4">${idx+1}</span>
-                    <input type="text" id="member_name_${idx}" value="${name}" oninput="updateSettlementMemberNames()" placeholder="이름" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none">
+                    <input type="text" id="member_name_${idx}" value="${name}" oninput="updateSettlementMemberNames()" placeholder="이름" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500">
                 `;
                 container.appendChild(div);
             });
         }
 
         function adjustSettlementMembersCount() {
-            const countInput = document.getElementById('settlementMemberCount');
-            if(!countInput) return;
-            let newCount = parseInt(countInput.value);
-            if (isNaN(newCount) || newCount < 1) newCount = 1;
-            if (newCount > 30) newCount = 30;
-            countInput.value = newCount;
+            const input = document.getElementById('settlementMemberCount');
+            if(!input) return;
+            let count = parseInt(input.value) || 8;
+            if(count < 1) count = 1;
+            if(count > 30) count = 30;
 
-            let currentInputs = [];
-            for (let i = 0; i < settlementMembers.length; i++) {
-                const inputEl = document.getElementById(`member_name_${i}`);
-                currentInputs.push(inputEl ? inputEl.value : settlementMembers[i]);
+            while(settlementMembers.length < count) {
+                settlementMembers.push(`참가자${settlementMembers.length + 1}`);
+            }
+            if(settlementMembers.length > count) {
+                settlementMembers = settlementMembers.slice(0, count);
             }
 
-            if (newCount > currentInputs.length) {
-                for (let i = currentInputs.length; i < newCount; i++) {
-                    currentInputs.push(`참여자${i+1}`);
-                }
-            } else {
-                currentInputs = currentInputs.slice(0, newCount);
-            }
-
-            settlementMembers = currentInputs;
             renderSettlementMembersInputs();
             updatePayerSelect();
-            renderExpenses();
-            saveSettlementData();
+            saveSettlementToFirebase();
         }
 
         function updateSettlementMemberNames() {
-            let updated = [];
-            for (let i = 0; i < settlementMembers.length; i++) {
-                const inputEl = document.getElementById(`member_name_${i}`);
-                updated.push(inputEl ? inputEl.value.trim() || `참여자${i+1}` : `참여자${i+1}`);
-            }
-            settlementMembers = updated;
+            settlementMembers.forEach((_, idx) => {
+                const val = document.getElementById(`member_name_${idx}`)?.value;
+                if(val) settlementMembers[idx] = val.trim();
+            });
             updatePayerSelect();
             renderExpenses();
         }
 
         function saveSettlementMembers() {
             updateSettlementMemberNames();
-            saveSettlementData();
-            showToast('정산 참여 인원 정보가 저장되었습니다! 👥', '✅');
+            saveSettlementToFirebase();
+            showToast('정산 참가 인원 및 이름이 저장되었습니다!', '👥');
         }
 
         function updatePayerSelect() {
-            const payerSelect = document.getElementById('expensePayer');
-            if (!payerSelect) return;
-            payerSelect.innerHTML = settlementMembers.map(p => `<option value="${p}">${p}</option>`).join('');
+            const select = document.getElementById('expensePayer');
+            if(!select) return;
+            const currentSelected = select.value;
+            select.innerHTML = '';
+
+            settlementMembers.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.innerText = name;
+                select.appendChild(opt);
+            });
+
+            if(settlementMembers.includes(currentSelected)) {
+                select.value = currentSelected;
+            }
         }
 
         function addExpense() {
-            const title = document.getElementById('expenseTitle').value.trim();
-            const amount = parseFloat(document.getElementById('expenseAmount').value);
-            const payer = document.getElementById('expensePayer').value;
-            const account = document.getElementById('expenseAccount').value.trim();
+            const titleInput = document.getElementById('expenseTitle');
+            const amountInput = document.getElementById('expenseAmount');
+            const payerSelect = document.getElementById('expensePayer');
+            const accountInput = document.getElementById('expenseAccount');
             const receiptInput = document.getElementById('expenseReceiptInput');
 
+            const title = titleInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            const payer = payerSelect.value;
+            const account = accountInput.value.trim();
+
             if (!title || isNaN(amount) || amount <= 0) {
-                showToast('항목명과 유효한 금액을 입력해 주세요.', '⚠️');
+                showToast('항목명과 올바른 금액을 입력해 주세요.', '⚠️');
                 return;
             }
 
-            const processAdd = (receiptData = '') => {
-                expenses.push({ id: Date.now(), title, amount, payer, account, receipt: receiptData });
-                saveSettlementData();
-                renderExpenses();
-                resetExpenseForm();
-                showToast('지출 항목이 추가되었습니다.', '➕');
-            };
-
-            if (receiptInput.files && receiptInput.files[0]) {
+            const files = receiptInput.files;
+            if (files && files.length > 0) {
                 const reader = new FileReader();
-                reader.onload = (e) => processAdd(e.target.result);
-                reader.readAsDataURL(receiptInput.files[0]);
+                reader.onload = function(e) {
+                    const newExpense = {
+                        id: Date.now(),
+                        title,
+                        amount,
+                        payer,
+                        account,
+                        receipt: e.target.result
+                    };
+                    expenses.push(newExpense);
+                    resetExpenseInputs();
+                    saveSettlementToFirebase();
+                    showToast('지출 내역 및 영수증이 추가되었습니다!', '💰');
+                };
+                reader.readAsDataURL(files[0]);
             } else {
-                processAdd('');
+                const newExpense = {
+                    id: Date.now(),
+                    title,
+                    amount,
+                    payer,
+                    account,
+                    receipt: null
+                };
+                expenses.push(newExpense);
+                resetExpenseInputs();
+                saveSettlementToFirebase();
+                showToast('지출 내역이 추가되었습니다!', '💰');
             }
         }
 
-        function resetExpenseForm() {
+        function resetExpenseInputs() {
             document.getElementById('expenseTitle').value = '';
             document.getElementById('expenseAmount').value = '';
             document.getElementById('expenseAccount').value = '';
@@ -1202,193 +1085,184 @@
         }
 
         function deleteExpense(id) {
-            expenses = expenses.filter(e => e.id !== id);
-            saveSettlementData();
-            renderExpenses();
+            expenses = expenses.filter(item => item.id !== id);
+            saveSettlementToFirebase();
             showToast('지출 항목이 삭제되었습니다.', '🗑');
         }
 
         function clearExpenses() {
-            if (expenses.length === 0) return;
-            expenses = [];
-            saveSettlementData();
-            renderExpenses();
-            showToast('모든 지출 항목이 초기화되었습니다.', '🧹');
+            if(confirm('모든 지출 내역을 삭제하시겠습니까?')) {
+                expenses = [];
+                saveSettlementToFirebase();
+                showToast('모든 지출 항목이 삭제되었습니다.', '🗑');
+            }
         }
 
         function handleCustomPerPersonChange() {
-            const val = document.getElementById('customPerPersonInput').value;
-            if (val === '' || isNaN(val)) {
-                customPerPersonShare = null;
-            } else {
-                customPerPersonShare = parseFloat(val);
-            }
-            renderExpenses();
-            saveSettlementData();
+            const input = document.getElementById('customPerPersonInput');
+            if(!input) return;
+            const val = parseFloat(input.value);
+            customPerPersonShare = !isNaN(val) ? val : null;
+            saveSettlementToFirebase();
         }
 
         function resetPerPersonShare() {
             customPerPersonShare = null;
             const input = document.getElementById('customPerPersonInput');
-            if (input) input.value = '';
-            renderExpenses();
-            saveSettlementData();
-            showToast('1인당 분담금이 자동 계산(N/1)으로 초기화되었습니다.', '🔄');
+            if(input) input.value = '';
+            saveSettlementToFirebase();
+            showToast('기본 분담금이 1/N 자동 계산으로 초기화되었습니다.', '🔄');
         }
 
-        async function saveSettlementData() {
+        function renderExpenses() {
+            const listEl = document.getElementById('expenseList');
+            const totalDisplay = document.getElementById('totalExpenseDisplay');
+            const reportEl = document.getElementById('personalSettlementReport');
+            if(!listEl) return;
+
+            listEl.innerHTML = '';
+            let totalAmount = 0;
+
+            expenses.forEach((item, idx) => {
+                totalAmount += item.amount;
+                const div = document.createElement('div');
+                div.className = "bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2";
+                
+                let receiptBtn = item.receipt ? `
+                    <button type="button" onclick="openImageModal('${item.receipt}', '${item.title} 영수증')" class="text-[11px] bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded hover:bg-blue-200">
+                        <i class="fa-solid fa-receipt mr-1"></i>영수증
+                    </button>
+                ` : '';
+
+                div.innerHTML = `
+                    <div class="space-y-0.5">
+                        <div class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5">
+                            <span>${idx+1}. ${item.title}</span>
+                            ${receiptBtn}
+                        </div>
+                        <div class="text-[11px] text-slate-500">
+                            결제: <strong class="text-slate-800">${item.payer}</strong> | 금액: <strong class="text-blue-700">${item.amount.toLocaleString()}</strong>원/엔
+                            ${item.account ? `<br><span class="text-slate-400">계좌: ${item.account}</span>` : ''}
+                        </div>
+                    </div>
+                    <button type="button" onclick="deleteExpense(${item.id})" class="text-slate-400 hover:text-rose-600 px-2 py-1 cursor-pointer">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                `;
+                listEl.appendChild(div);
+            });
+
+            if (expenses.length === 0) {
+                listEl.innerHTML = `<div class="text-center py-4 text-slate-400 text-xs">등록된 지출 항목이 없습니다.</div>`;
+            }
+
+            if(totalDisplay) totalDisplay.innerText = totalAmount.toLocaleString() + ' 원/엔';
+
+            // 정산 계산
+            const N = settlementMembers.length || 1;
+            const perPerson = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalAmount / N);
+
+            const payerPaidMap = {};
+            settlementMembers.forEach(m => payerPaidMap[m] = 0);
+
+            expenses.forEach(item => {
+                if(payerPaidMap[item.payer] !== undefined) {
+                    payerPaidMap[item.payer] += item.amount;
+                } else {
+                    payerPaidMap[item.payer] = item.amount;
+                }
+            });
+
+            if(reportEl) {
+                reportEl.innerHTML = '';
+                settlementMembers.forEach(m => {
+                    const paid = payerPaidMap[m] || 0;
+                    const balance = paid - perPerson;
+
+                    let badgeHtml = '';
+                    if (balance > 0) {
+                        badgeHtml = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-xs">받을 금액: +${balance.toLocaleString()}</span>`;
+                    } else if (balance < 0) {
+                        badgeHtml = `<span class="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded text-xs">보낼 금액: ${balance.toLocaleString()}</span>`;
+                    } else {
+                        badgeHtml = `<span class="bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded text-xs">정산 완료 (0)</span>`;
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = "bg-slate-50 p-2.5 rounded-lg border border-slate-200 flex items-center justify-between text-xs";
+                    card.innerHTML = `
+                        <div class="font-bold text-slate-900">${m}</div>
+                        <div>${badgeHtml}</div>
+                    `;
+                    reportEl.appendChild(card);
+                });
+            }
+        }
+
+        async function saveSettlementToFirebase() {
+            if (!window.db) return;
             const dataToSave = {
                 members: settlementMembers,
                 expenses: expenses,
                 notesHistory: notesHistory,
                 customPerPersonShare: customPerPersonShare
             };
-
             try {
-                if (window.db) {
-                    await window.setDoc(window.doc(window.db, "fukuokaTour", FIREBASE_SETTLEMENT_DOC), dataToSave);
-                }
-            } catch (e) {
-                console.error("Settlement Firebase Save Error:", e);
+                await window.setDoc(window.doc(window.db, "fukuokaTour", FIREBASE_SETTLEMENT_DOC), dataToSave);
+            } catch(e) {
+                console.error("Settlement Save Error:", e);
             }
-        }
-
-        function renderExpenses() {
-            const list = document.getElementById('expenseList');
-            const totalDisplay = document.getElementById('totalExpenseDisplay');
-            const reportContainer = document.getElementById('personalSettlementReport');
-            if(!list || !totalDisplay || !reportContainer) return;
-
-            const splitCount = settlementMembers.length > 0 ? settlementMembers.length : 1;
-
-            if (expenses.length === 0) {
-                list.innerHTML = '<p class="text-slate-400 text-center py-3">등록된 지출 내역이 없습니다.</p>';
-                totalDisplay.innerText = '0 원/엔';
-                reportContainer.innerHTML = '<p class="text-slate-400 text-center py-2 text-xs">등록된 지출 내역이 없습니다.</p>';
-                return;
-            }
-
-            let totalSum = 0;
-            let payerPaidMap = {};
-            let payerAccountMap = {};
-
-            settlementMembers.forEach(m => {
-                payerPaidMap[m] = 0;
-            });
-
-            list.innerHTML = '';
-
-            expenses.forEach(item => {
-                totalSum += item.amount;
-                if (payerPaidMap[item.payer] !== undefined) {
-                    payerPaidMap[item.payer] += item.amount;
-                } else {
-                    payerPaidMap[item.payer] = item.amount;
-                }
-
-                if (item.account) {
-                    payerAccountMap[item.payer] = item.account;
-                }
-
-                const div = document.createElement('div');
-                div.className = "p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5";
-                
-                let receiptBtn = item.receipt ? `<button type="button" onclick="openImageModal('${item.receipt}', '${item.title} 영수증')" class="text-blue-600 font-bold underline ml-2"><i class="fa-solid fa-receipt mr-1"></i>영수증 보기</button>` : '';
-
-                div.innerHTML = `
-                    <div class="flex items-center justify-between font-bold text-slate-800">
-                        <span>${item.title}</span>
-                        <span class="text-blue-600">${item.amount.toLocaleString()} 원/엔</span>
-                    </div>
-                    <div class="flex items-center justify-between text-[11px] text-slate-500">
-                        <span>결제: <strong class="text-slate-700">${item.payer}</strong> ${item.account ? `(${item.account})` : ''} ${receiptBtn}</span>
-                        <button type="button" onclick="deleteExpense(${item.id})" class="text-rose-500 hover:underline">삭제</button>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-
-            totalDisplay.innerText = `${totalSum.toLocaleString()} 원/엔`;
-
-            const perPersonCost = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalSum / splitCount);
-
-            reportContainer.innerHTML = '';
-            settlementMembers.forEach(m => {
-                const paid = payerPaidMap[m] || 0;
-                const balance = paid - perPersonCost;
-                const acc = payerAccountMap[m] ? ` | 계좌: ${payerAccountMap[m]}` : '';
-
-                let statusText = '';
-                if (balance > 0) {
-                    statusText = `<span class="text-emerald-600 font-bold">+${balance.toLocaleString()} 원/엔 (받을 돈)</span>`;
-                } else if (balance < 0) {
-                    statusText = `<span class="text-rose-600 font-bold">${balance.toLocaleString()} 원/엔 (보낼 돈)</span>`;
-                } else {
-                    statusText = `<span class="text-slate-500 font-bold">0 원/엔 (정산 완료)</span>`;
-                }
-
-                const card = document.createElement('div');
-                card.className = "p-2.5 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between text-xs";
-                card.innerHTML = `
-                    <div>
-                        <span class="font-bold text-slate-900">${m}</span>
-                        <span class="text-[11px] text-slate-500 block">총 결제액: ${paid.toLocaleString()} 원/엔 ${acc}</span>
-                    </div>
-                    <div class="text-right">${statusText}</div>
-                `;
-                reportContainer.appendChild(card);
-            });
         }
 
         function copySettlementText() {
-            if (expenses.length === 0) {
-                showToast('공유할 정산 내역이 없습니다.', '⚠️');
-                return;
-            }
+            const totalAmount = expenses.reduce((sum, item) => sum + item.amount, 0);
+            const N = settlementMembers.length || 1;
+            const perPerson = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalAmount / N);
 
-            let totalSum = 0;
-            let payerPaidMap = {};
-            settlementMembers.forEach(m => payerPaidMap[m] = 0);
+            let txt = `[2026 후쿠오카 골프 & 투어 최종 정산]\n`;
+            txt += `-----------------------------\n`;
+            txt += `총 지출: ${totalAmount.toLocaleString()} 원/엔\n`;
+            txt += `참가 인원: ${N}명 (1인당 부담금: ${perPerson.toLocaleString()} 원/엔)\n\n`;
 
-            expenses.forEach(e => {
-                totalSum += e.amount;
-                if (payerPaidMap[e.payer] !== undefined) payerPaidMap[e.payer] += e.amount;
-                else payerPaidMap[e.payer] = e.amount;
+            txt += `■ 지출 내역 상세:\n`;
+            expenses.forEach((item, idx) => {
+                txt += `${idx+1}. ${item.title}: ${item.amount.toLocaleString()} (결제: ${item.payer})\n`;
+                if(item.account) txt += `   ㄴ 계좌: ${item.account}\n`;
             });
 
-            const splitCount = settlementMembers.length > 0 ? settlementMembers.length : 1;
-            const perPersonCost = customPerPersonShare !== null ? customPerPersonShare : Math.round(totalSum / splitCount);
-
-            let text = `💰 [2026 후쿠오카 투어 정산 내역]\n`;
-            text += `------------------------------------\n`;
-            text += `▪ 총 지출: ${totalSum.toLocaleString()} 원/엔\n`;
-            text += `▪ 1인당 부담금 (${splitCount}명): ${perPersonCost.toLocaleString()} 원/엔\n\n`;
-            text += `[개인별 입금/환급 현황]\n`;
+            txt += `\n■ 개인별 정산 수수 내역:\n`;
+            const payerPaidMap = {};
+            settlementMembers.forEach(m => payerPaidMap[m] = 0);
+            expenses.forEach(item => {
+                if(payerPaidMap[item.payer] !== undefined) payerPaidMap[item.payer] += item.amount;
+            });
 
             settlementMembers.forEach(m => {
                 const paid = payerPaidMap[m] || 0;
-                const balance = paid - perPersonCost;
-                if (balance > 0) {
-                    text += `- ${m}: +${balance.toLocaleString()} 원/엔 (환급받기)\n`;
-                } else if (balance < 0) {
-                    text += `- ${m}: ${Math.abs(balance).toLocaleString()} 원/엔 입금 필요\n`;
+                const balance = paid - perPerson;
+                if(balance > 0) {
+                    txt += `- ${m}: +${balance.toLocaleString()} (받을 금액)\n`;
+                } else if(balance < 0) {
+                    txt += `- ${m}: ${balance.toLocaleString()} (보낼 금액)\n`;
                 } else {
-                    text += `- ${m}: 0 원/엔 (정산 완료)\n`;
+                    txt += `- ${m}: 0 (정산 완료)\n`;
                 }
             });
 
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('정산 요약 텍스트가 복사되었습니다! 카톡에 붙여넣으세요.', '📋');
+            navigator.clipboard.writeText(txt).then(() => {
+                showToast('정산 내역이 클립보드에 복사되었습니다! 카톡에 붙여넣으세요.', '📋');
+            }).catch(() => {
+                showToast('복사에 실패했습니다.', '❌');
             });
         }
 
         // ==========================================
-        // 메모(NOTE) CRUD 및 누적 저장 로직
+        // 메모(NOTE) 로직
         // ==========================================
         function saveNewNote() {
-            const input = document.getElementById('newNoteInput');
-            if (!input) return;
-            const content = input.value.trim();
+            const textarea = document.getElementById('newNoteInput');
+            if(!textarea) return;
+            const content = textarea.value.trim();
 
             if (!content) {
                 showToast('메모 내용을 입력해 주세요.', '⚠️');
@@ -1396,36 +1270,35 @@
             }
 
             const now = new Date();
-            const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
             const newNote = {
                 id: Date.now(),
-                date: dateStr,
-                content: content
+                content: content,
+                date: timeStr
             };
 
             notesHistory.unshift(newNote);
-            input.value = '';
+            textarea.value = '';
 
             renderNotesHistory();
-            saveSettlementData();
-            showToast('메모가 타임라인에 누적 저장되었습니다! 📝', '✅');
+            saveSettlementToFirebase();
+            showToast('새 메모가 추가되었습니다!', '📝');
         }
 
         function deleteNote(id) {
             notesHistory = notesHistory.filter(n => n.id !== id);
             renderNotesHistory();
-            saveSettlementData();
+            saveSettlementToFirebase();
             showToast('메모가 삭제되었습니다.', '🗑');
         }
 
         function clearAllNotes() {
-            if (notesHistory.length === 0) return;
-            if (confirm('모든 메모 내역을 삭제하시겠습니까?')) {
+            if (confirm('저장된 모든 메모를 삭제하시겠습니까?')) {
                 notesHistory = [];
                 renderNotesHistory();
-                saveSettlementData();
-                showToast('모든 메모가 초기화되었습니다.', '🧹');
+                saveSettlementToFirebase();
+                showToast('모든 메모가 삭제되었습니다.', '🗑');
             }
         }
 
@@ -1433,107 +1306,106 @@
             const container = document.getElementById('notesHistoryContainer');
             const badge = document.getElementById('noteCountBadge');
             const searchInput = document.getElementById('noteSearchInput');
-            if (!container) return;
+            if(!container) return;
 
-            const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
-            const filteredNotes = notesHistory.filter(n => n.content.toLowerCase().includes(query));
+            const query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const filtered = notesHistory.filter(n => n.content.toLowerCase().includes(query));
 
-            if (badge) badge.innerText = filteredNotes.length;
-
-            if (filteredNotes.length === 0) {
-                container.innerHTML = '<p class="text-slate-400 text-center py-6 text-xs">저장된 메모가 없습니다.</p>';
-                return;
-            }
-
+            if(badge) badge.innerText = notesHistory.length;
             container.innerHTML = '';
-            filteredNotes.forEach(note => {
-                const card = document.createElement('div');
-                card.className = "p-3.5 bg-amber-50/50 rounded-xl border border-amber-200/60 space-y-2 relative group text-xs";
-                card.innerHTML = `
-                    <div class="flex items-center justify-between text-[11px] text-amber-800 font-bold border-b border-amber-200/40 pb-1.5">
-                        <span>📅 ${note.date}</span>
-                        <button type="button" onclick="deleteNote(${note.id})" class="text-rose-500 hover:underline">삭제</button>
-                    </div>
-                    <div class="text-slate-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(note.content)}</div>
-                `;
-                container.appendChild(card);
-            });
-        }
 
-        function copyAllNotesText() {
-            if (notesHistory.length === 0) {
-                showToast('복사할 메모가 없습니다.', '⚠️️');
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">저장된 메모가 없습니다.</div>`;
                 return;
             }
 
-            let text = `📝 [2026 후쿠오카 투어 메모 전체 내역]\n------------------------------------\n`;
-            notesHistory.forEach((n, idx) => {
-                text += `[${idx+1}] ${n.date}\n${n.content}\n\n`;
-            });
-
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('전체 메모가 복사되었습니다!', '📋');
+            filtered.forEach(note => {
+                const div = document.createElement('div');
+                div.className = "bg-amber-50/50 p-3.5 rounded-xl border border-amber-100 space-y-1.5 text-xs relative group";
+                div.innerHTML = `
+                    <div class="flex items-center justify-between text-slate-400 text-[11px]">
+                        <span><i class="fa-regular fa-clock mr-1"></i>${note.date}</span>
+                        <button type="button" onclick="deleteNote(${note.id})" class="text-slate-400 hover:text-rose-600 px-1 cursor-pointer" title="메모 삭제">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                    <p class="text-slate-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(note.content)}</p>
+                `;
+                container.appendChild(div);
             });
         }
 
         function escapeHtml(text) {
-            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
 
-        // ==========================================
-        // 모달 및 공유 제어 함수
-        // ==========================================
-        function openShareModal() {
-            const modal = document.getElementById('shareModal');
-            if (modal) modal.classList.remove('hidden');
-        }
-
-        function closeShareModal() {
-            const modal = document.getElementById('shareModal');
-            if (modal) modal.classList.add('hidden');
-        }
-
-        function openImageModal(src, title = '이미지 미리보기') {
-            const modal = document.getElementById('imageModal');
-            const img = document.getElementById('modalImageElement');
-            const titleEl = document.getElementById('imageModalTitle');
-
-            if (modal && img) {
-                img.src = src;
-                if (titleEl) titleEl.innerText = title;
-                modal.classList.remove('hidden');
+        function copyAllNotesText() {
+            if (notesHistory.length === 0) {
+                showToast('복사할 메모가 없습니다.', '⚠️');
+                return;
             }
+
+            let txt = `[2026 후쿠오카 여행 메모 모음]\n-----------------------------\n`;
+            notesHistory.forEach((n, idx) => {
+                txt += `${idx+1}. (${n.date})\n${n.content}\n\n`;
+            });
+
+            navigator.clipboard.writeText(txt).then(() => {
+                showToast('전체 메모가 클립보드에 복사되었습니다!', '📋');
+            });
+        }
+
+        // 모달 및 공유 기능
+        function openImageModal(src, title) {
+            document.getElementById('modalImageElement').src = src;
+            document.getElementById('imageModalTitle').innerText = title || '이미지 미리보기';
+            document.getElementById('imageModal').classList.remove('hidden');
         }
 
         function closeImageModal() {
-            const modal = document.getElementById('imageModal');
-            if (modal) modal.classList.add('hidden');
+            document.getElementById('imageModal').classList.add('hidden');
+        }
+
+        function openShareModal() {
+            document.getElementById('shareModal').classList.remove('hidden');
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').classList.add('hidden');
         }
 
         function copyCurrentLink() {
             navigator.clipboard.writeText(window.location.href).then(() => {
-                showToast('현재 페이지 링크가 복사되었습니다!', '🔗');
+                showToast('현재 웹페이지 링크가 복사되었습니다!', '🔗');
                 closeShareModal();
             });
         }
 
         function copyFormattedScoreText() {
-            const r1 = document.getElementById('name_r1')?.value || '1R';
-            const r2 = document.getElementById('name_r2')?.value || '2R';
-            const r3 = document.getElementById('name_r3')?.value || '3R';
-            const r4 = document.getElementById('name_r4')?.value || '4R';
+            const roundNames = [
+                document.getElementById('name_r1')?.value || '1R',
+                document.getElementById('name_r2')?.value || '2R',
+                document.getElementById('name_r3')?.value || '3R',
+                document.getElementById('name_r4')?.value || '4R'
+            ];
 
-            let text = `⛳ [2026 후쿠오카 골프 실시간 스코어]\n------------------------------------\n`;
-            players.forEach((p, idx) => {
-                const s1 = document.getElementById(`r1_${idx}`)?.value || '-';
-                const s2 = document.getElementById(`r2_${idx}`)?.value || '-';
-                const s3 = document.getElementById(`r3_${idx}`)?.value || '-';
-                const s4 = document.getElementById(`r4_${idx}`)?.value || '-';
-                text += `${p}: ${r1}(${s1}) | ${r2}(${s2}) | ${r3}(${s3}) | ${r4}(${s4})\n`;
+            let txt = `⛳ [2026 후쿠오카 골프 현황 요약]\n-----------------------------\n`;
+            
+            players.forEach((player, pIndex) => {
+                const r1 = document.getElementById(`r1_${pIndex}`)?.value || '-';
+                const r2 = document.getElementById(`r2_${pIndex}`)?.value || '-';
+                const r3 = document.getElementById(`r3_${pIndex}`)?.value || '-';
+                const r4 = document.getElementById(`r4_${pIndex}`)?.value || '-';
+                txt += `${player}: [1R] ${r1} | [2R] ${r2} | [3R] ${r3} | [4R] ${r4}\n`;
             });
 
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('스코어 요약이 복사되었습니다!', '📋');
+            navigator.clipboard.writeText(txt).then(() => {
+                showToast('스코어 요약 텍스트가 복사되었습니다!', '📋');
                 closeShareModal();
             });
         }
