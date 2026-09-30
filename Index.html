@@ -1,0 +1,725 @@
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2026 후쿠오카 골프 & 시티 투어</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Kakao JavaScript SDK -->
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js" crossorigin="anonymous"></script>
+    
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body { 
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Custom scrollbar for mobile score table */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen pb-16">
+
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-3xl mx-auto px-4 py-3.5 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <span class="text-2xl">⛳</span>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold tracking-tight">2026 후쿠오카 골프 & 시티 투어</h1>
+                    <p class="text-xs text-slate-400">2026.10.02(금) - 10.05(월) | 3박 4일</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold px-2.5 py-1 rounded-full border border-emerald-500/30">8명 확정</span>
+                <button onclick="shareKakao()" class="bg-[#FEE500] hover:bg-[#fada00] text-[#191919] font-bold text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition shadow-sm" title="카카오톡 공유">
+                    <i class="fa-solid fa-comment text-sm"></i>
+                    <span class="hidden sm:inline">공유</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-3xl mx-auto px-4 mt-4">
+        <a href="https://www.vjw.digital.go.jp/" target="_blank" class="block bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl p-3.5 shadow-md transition transform active:scale-98">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-white/20 p-2 rounded-lg text-lg">🚨</div>
+                    <div>
+                        <div class="text-xs font-semibold text-orange-100 uppercase tracking-wider">일본 입국 필수 사전등록</div>
+                        <div class="text-sm font-bold">비짓재팬웹 (Visit Japan Web) 바로가기</div>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right text-sm opacity-80"></i>
+            </div>
+        </a>
+    </div>
+
+    <div class="max-w-3xl mx-auto px-4 mt-4">
+        <div class="flex bg-slate-200 p-1 rounded-xl text-xs sm:text-sm font-bold">
+            <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn flex-1 py-2.5 rounded-lg transition-all text-center text-slate-700 bg-white shadow-sm">
+                📌 개요 & 일정
+            </button>
+            <button onclick="switchTab('places')" id="tab-places" class="tab-btn flex-1 py-2.5 rounded-lg transition-all text-center text-slate-600 hover:text-slate-900">
+                🏨 숙소 & 골프장
+            </button>
+            <button onclick="switchTab('score')" id="tab-score" class="tab-btn flex-1 py-2.5 rounded-lg transition-all text-center text-slate-600 hover:text-slate-900">
+                🏌️ 스코어보드
+            </button>
+        </div>
+    </div>
+
+    <!-- TAB 1: 개요 & 간편일정 -->
+    <div id="overview" class="tab-content active max-w-3xl mx-auto px-4 mt-4 space-y-4">
+        <!-- 멤버 카드 -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <h3 class="text-slate-900 font-bold text-base flex items-center mb-3">
+                <i class="fa-solid fa-users text-blue-500 mr-2"></i> 여행 동반자 (8명)
+            </h3>
+            <div class="flex flex-wrap gap-2">
+                <span class="bg-slate-100 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200">원석</span>
+                <span class="bg-slate-100 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200">종희</span>
+                <span class="bg-slate-100 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200">선우</span>
+                <span class="bg-slate-100 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200">영규</span>
+                <span class="bg-slate-100 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200">지윤</span>
+                <span class="bg-slate-100 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200">호준</span>
+                <span class="bg-slate-100 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200">동민</span>
+                <span class="bg-slate-100 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200">현주</span>
+            </div>
+        </div>
+
+        <!-- 항공편 정보 -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <h3 class="text-slate-900 font-bold text-base flex items-center mb-3">
+                <i class="fa-solid fa-plane text-blue-500 mr-2"></i> 항공편 편성
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <!-- 출발 -->
+                <div class="bg-blue-50/60 p-3.5 rounded-xl border border-blue-100">
+                    <div class="font-bold text-blue-900 mb-1 flex items-center">
+                        <i class="fa-solid fa-plane-departure text-blue-600 mr-1.5"></i> 출발편 (10/2 금)
+                    </div>
+                    <ul class="space-y-1.5 text-slate-700">
+                        <li><strong class="text-slate-900">제주항공 (6명):</strong> 원석, 종희, 선우, 영규, 지윤, 현주</li>
+                        <li><strong class="text-slate-900">진에어 (2명):</strong> 호준, 동민</li>
+                    </ul>
+                </div>
+                <!-- 귀국 -->
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <div class="font-bold text-slate-900 mb-1 flex items-center">
+                        <i class="fa-solid fa-plane-arrival text-slate-600 mr-1.5"></i> 귀국편 (10/5 월)
+                    </div>
+                    <ul class="space-y-1.5 text-slate-700">
+                        <li><strong class="text-slate-900">제주항공 (4명):</strong> 원석, 종희, 선우, 영규</li>
+                        <li><strong class="text-slate-900">진에어 (4명):</strong> 호준, 동민, 지윤, 현주</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 일차별 간편 타임라인 -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <h3 class="text-slate-900 font-bold text-base flex items-center mb-4">
+                <i class="fa-solid fa-calendar-days text-blue-500 mr-2"></i> 주요 일정 요약
+            </h3>
+            <div class="space-y-4 text-xs">
+                <!-- Day 1 -->
+                <div class="flex items-start space-x-3">
+                    <span class="bg-blue-600 text-white font-bold px-2 py-1 rounded text-[11px] shrink-0">1일차</span>
+                    <div>
+                        <div class="font-bold text-slate-900 text-sm">10/2 (금) - 후쿠오카 도착 & 첫 라운딩</div>
+                        <p class="text-slate-600 mt-0.5">공항 인수 렌터카 이동 → <b>센트럴 후쿠오카 GC</b> (티오프 11:30~) → 라운딩 후 벳부 숙소 체크인</p>
+                    </div>
+                </div>
+                <!-- Day 2 -->
+                <div class="flex items-start space-x-3">
+                    <span class="bg-emerald-600 text-white font-bold px-2 py-1 rounded text-[11px] shrink-0">2일차</span>
+                    <div>
+                        <div class="font-bold text-slate-900 text-sm">10/3 (토) - 벳부 골프 & 온천/자유관광</div>
+                        <p class="text-slate-600 mt-0.5"><b>벳부 GC</b> 라운딩 (08:00 출발) → 종료 후 벳부 지옥온천 & 시내 자유관광</p>
+                    </div>
+                </div>
+                <!-- Day 3 -->
+                <div class="flex items-start space-x-3">
+                    <span class="bg-amber-600 text-white font-bold px-2 py-1 rounded text-[11px] shrink-0">3일차</span>
+                    <div>
+                        <div class="font-bold text-slate-900 text-sm">10/4 (일) - 유후 고원 라운딩</div>
+                        <p class="text-slate-600 mt-0.5"><b>유후 고원 GC</b> 라운딩 (08:30 출발) → 유후인 상가거리 & 온천 휴식</p>
+                    </div>
+                </div>
+                <!-- Day 4 -->
+                <div class="flex items-start space-x-3">
+                    <span class="bg-purple-600 text-white font-bold px-2 py-1 rounded text-[11px] shrink-0">4일차</span>
+                    <div>
+                        <div class="font-bold text-slate-900 text-sm">10/5 (월) - 최종 라운딩 & 귀국</div>
+                        <p class="text-slate-600 mt-0.5"><b>로렐히타 CC</b> 라운딩 (07:20 출발) → 공항 이동/렌터카 반납 → 귀국</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: 숙소 & 골프장 -->
+    <div id="places" class="tab-content max-w-3xl mx-auto px-4 mt-4 space-y-4">
+        <!-- 숙소 안내 -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-slate-900 font-bold text-base flex items-center">
+                    <i class="fa-solid fa-hotel text-indigo-500 mr-2"></i> 벳푸 숙소 안내
+                </h3>
+                <span class="text-xs bg-indigo-50 text-indigo-600 font-semibold px-2 py-1 rounded">체크인 16:00~</span>
+            </div>
+
+            <div class="space-y-3 text-xs text-slate-700">
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-start justify-between">
+                    <div>
+                        <div class="font-bold text-slate-900">주소</div>
+                        <div>일본 오이타현 벳푸시 키타하마 2-7-22</div>
+                        <div class="text-slate-500 mt-1">대형 상업 시설 '도키 벳푸 스토어' 뒤쪽 거리 (2층 벽면 화살표 '→' 표시)</div>
+                    </div>
+                    <a href="https://maps.app.goo.gl/yVRJJnU97YefSZCh9" target="_blank" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-xs hover:bg-blue-700 shrink-0 ml-2">
+                        <i class="fa-solid fa-location-dot mr-1"></i> 지도
+                    </a>
+                </div>
+
+                <!-- 주차 정보 -->
+                <div class="border-t border-slate-100 pt-3">
+                    <div class="font-bold text-slate-900 mb-2 flex items-center">
+                        <i class="fa-solid fa-square-parking text-amber-500 mr-1.5"></i> 주차 안내 (차량 2대)
+                    </div>
+                    <ul class="space-y-2 list-disc list-inside text-slate-600">
+                        <li><strong class="text-slate-800">숙소 앞 도로:</strong> 일방통행 도로. 짐 하차용 <b>임시 정차만 가능</b> (주차 금지).</li>
+                        <li>
+                            <strong class="text-slate-800">제1주차장 (무료 1호차):</strong> 숙소 도보 1분 (뒤쪽 3번째 지정석).
+                            <a href="https://maps.app.goo.gl/pg7sjNegmMRXqpkcA?g_st=ic" target="_blank" class="text-blue-600 underline font-semibold ml-1">위치 확인</a>
+                        </li>
+                        <li>
+                            <strong class="text-slate-800">지정 유료 주차장 (2호차):</strong> 벳푸 타워 2차 주차장 (도보 4분, 시간당 100엔 / 12시간 400엔).
+                            <a href="https://maps.app.goo.gl/EnG8MoWN8TBwvj2Z8" target="_blank" class="text-blue-600 underline font-semibold ml-1">위치 확인</a>
+                            <br><span class="text-[11px] text-amber-700">※ 영수증 제출 시 정산 처리 진행</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 어메니티 -->
+                <div class="border-t border-slate-100 pt-3">
+                    <div class="font-bold text-slate-900 mb-2 flex items-center">
+                        <i class="fa-solid fa-pump-soap text-emerald-500 mr-1.5"></i> 제공 어메니티
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                        <div class="bg-emerald-50/50 p-2.5 rounded-lg border border-emerald-100">
+                            <span class="font-bold text-emerald-800">♨️ 외부 온천 지참 가능:</span>
+                            <p class="text-slate-600 mt-0.5">칫솔, 바디타월, 핸드타월 + (3종 세트 2개 제공)</p>
+                        </div>
+                        <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                            <span class="font-bold text-slate-800">🏠 숙소 전용 (반출 불가):</span>
+                            <p class="text-slate-600 mt-0.5">얼굴 수건, 목욕 수건 (세탁기/건조기 구비)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 골프장 목록 -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+            <h3 class="text-slate-900 font-bold text-base flex items-center mb-3">
+                <i class="fa-solid fa-flag text-emerald-600 mr-2"></i> 골프장 디렉토리
+            </h3>
+
+            <div class="space-y-3">
+                <!-- GC 1 -->
+                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 transition">
+                    <div class="flex items-center justify-between">
+                        <div class="font-bold text-slate-900 text-sm">1일차: 센트럴 후쿠오카 골프클럽</div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Central+Fukuoka+Golf+Club" target="_blank" class="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded font-semibold hover:bg-slate-300">
+                            <i class="fa-solid fa-map-location-dot"></i> 지도
+                        </a>
+                    </div>
+                    <div class="mt-1">
+                        <span class="inline-block bg-amber-100 text-amber-800 text-[11px] font-bold px-2 py-0.5 rounded mb-1">⏰ 티오프 11:30 ~ 12:00</span>
+                        <p class="text-xs text-slate-600">삼나무와 벚나무가 어우러진 18홀 구릉 코스. 16번 홀 연못 공략이 핵심.</p>
+                    </div>
+                </div>
+
+                <!-- GC 2 -->
+                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 transition">
+                    <div class="flex items-center justify-between">
+                        <div class="font-bold text-slate-900 text-sm">2일차: 벳부 골프클럽</div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Beppu+Golf+Club" target="_blank" class="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded font-semibold hover:bg-slate-300">
+                            <i class="fa-solid fa-map-location-dot"></i> 지도
+                        </a>
+                    </div>
+                    <div class="mt-1">
+                        <span class="inline-block bg-amber-100 text-amber-800 text-[11px] font-bold px-2 py-0.5 rounded mb-1">⏰ 08:00 출발</span>
+                        <p class="text-xs text-slate-600">1930년 개장, 규슈에서 2번째로 오래된 유서 깊은 전통 코스.</p>
+                    </div>
+                </div>
+
+                <!-- GC 3 -->
+                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 transition">
+                    <div class="flex items-center justify-between">
+                        <div class="font-bold text-slate-900 text-sm">3일차: 유후 고원 골프클럽</div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Yufu+Kogen+Golf+Club" target="_blank" class="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded font-semibold hover:bg-slate-300">
+                            <i class="fa-solid fa-map-location-dot"></i> 지도
+                        </a>
+                    </div>
+                    <div class="mt-1">
+                        <span class="inline-block bg-amber-100 text-amber-800 text-[11px] font-bold px-2 py-0.5 rounded mb-1">⏰ 08:30 출발</span>
+                        <p class="text-xs text-slate-600">유후다케 산기슭의 탁 트인 리조트 코스. 전략적 언듈레이션 구성.</p>
+                    </div>
+                </div>
+
+                <!-- GC 4 -->
+                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-slate-300 transition">
+                    <div class="flex items-center justify-between">
+                        <div class="font-bold text-slate-900 text-sm">4일차: 로렐히타 컨트리클럽</div>
+                        <a href="https://www.google.com/maps/search/?api=1&query=Laurel+Hita+Country+Club" target="_blank" class="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded font-semibold hover:bg-slate-300">
+                            <i class="fa-solid fa-map-location-dot"></i> 지도
+                        </a>
+                    </div>
+                    <div class="mt-1">
+                        <span class="inline-block bg-amber-100 text-amber-800 text-[11px] font-bold px-2 py-0.5 rounded mb-1">⏰ 07:20 출발</span>
+                        <p class="text-xs text-slate-600">히타 분지를 바라보는 파노라마 뷰 구장. 정교하고 섬세한 라인 형성.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: 스코어보드 -->
+    <div id="score" class="tab-content max-w-3xl mx-auto px-4 mt-4 space-y-4">
+        <!-- 순위 요약 박스 -->
+        <div id="rankingContainer" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 space-y-3">
+            <!-- Dynamic leaderboard -->
+        </div>
+
+        <!-- 스코어 입력 테이블 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-700">🏌️ 실시간 스코어 입력</span>
+                <span class="text-[11px] text-slate-500">Net 타수 = Gross - Hcp</span>
+            </div>
+            
+            <div class="overflow-x-auto custom-scrollbar">
+                <table id="scoreTable" class="w-full text-center text-xs">
+                    <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                        <tr>
+                            <th class="py-2.5 px-2">선수</th>
+                            <th class="py-2.5 px-1 w-12">Hcp</th>
+                            <th class="py-2.5 px-1"><input type="text" id="name_r1" value="1R (센트럴)" oninput="calculateRankings()" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
+                            <th class="py-2.5 px-1"><input type="text" id="name_r2" value="2R (벳부)" oninput="calculateRankings()" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
+                            <th class="py-2.5 px-1"><input type="text" id="name_r3" value="3R (유후)" oninput="calculateRankings()" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
+                            <th class="py-2.5 px-1"><input type="text" id="name_r4" value="4R (로렐)" oninput="calculateRankings()" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
+                            <th class="py-2.5 px-2 bg-blue-50/50 text-blue-900">평균</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scoreBody" class="divide-y divide-slate-100">
+                        <!-- Dynamic table rows -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button onclick="saveScores()" class="py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md transition transform active:scale-98 flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>스코어 기기에 저장하기</span>
+            </button>
+            <button onclick="shareKakao()" class="py-3.5 bg-[#FEE500] hover:bg-[#f3dc00] text-[#191919] font-bold text-sm rounded-xl shadow-md transition transform active:scale-98 flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-comment"></i>
+                <span>카카오톡으로 공유하기</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Toast Notification -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-lg border border-slate-700/50 opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center space-x-2">
+        <span id="toastIcon">ℹ️</span>
+        <span id="toastMsg">알림 메세지</span>
+    </div>
+
+    <!-- Kakao Share / Web Share Dialog Modal -->
+    <div id="shareModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center space-x-2 text-slate-900 font-bold text-base">
+                    <span class="text-[#FEE500] bg-[#191919] p-1 rounded-lg text-sm"><i class="fa-solid fa-comment"></i></span>
+                    <span>여행 및 스코어 공유</span>
+                </div>
+                <button onclick="closeShareModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-600 leading-relaxed">
+                현재 스코어 요약을 카카오톡에 바로 붙여넣거나 웹 애플리케이션 링크를 공유할 수 있습니다.
+            </p>
+
+            <!-- 웹사이트 주소 입력란 (404 방지용) -->
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1.5">
+                <label for="customWebUrl" class="font-bold text-slate-700 block">🌐 실제 웹사이트 주소 (선택)</label>
+                <input type="url" id="customWebUrl" placeholder="https://자신의웹사이트.com" onchange="saveCustomUrl()" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-blue-500">
+                <p class="text-[10px] text-slate-400">웹서버/GitHub 등에 올리신 주소를 입력해 두면 404 에러 없이 링크가 전송됩니다.</p>
+            </div>
+
+            <div class="space-y-2 pt-1">
+                <button onclick="copyFormattedScoreText()" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-copy"></i>
+                    <span>📋 스코어 요약 텍스트 복사 (카톡 붙여넣기용)</span>
+                </button>
+                <button onclick="copyCurrentLink()" class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-link"></i>
+                    <span>🔗 웹 애플리케이션 링크 복사</span>
+                </button>
+            </div>
+            
+            <div class="pt-1">
+                <button onclick="closeShareModal()" class="w-full py-2 text-slate-500 font-semibold text-xs hover:bg-slate-100 rounded-lg">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab Handler Function
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'shadow-sm', 'text-slate-700');
+                btn.classList.add('text-slate-600');
+            });
+
+            document.getElementById(tabId).classList.add('active');
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            activeBtn.classList.add('bg-white', 'shadow-sm', 'text-slate-700');
+            activeBtn.classList.remove('text-slate-600');
+        }
+
+        // Custom Toast Helper
+        function showToast(message, icon = '✅') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastIcon').innerText = icon;
+            document.getElementById('toastMsg').innerText = message;
+            
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+
+        const players = ['원석', '종희', '선우', '영규', '지윤', '호준', '동민', '현주'];
+        const tbody = document.getElementById('scoreBody');
+        const STORAGE_KEY = 'fukuokaTourScores_2026';
+
+        function renderTable() {
+            const savedData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+
+            if (savedData.roundNames) {
+                document.getElementById('name_r1').value = savedData.roundNames.r1 || '1R (센트럴)';
+                document.getElementById('name_r2').value = savedData.roundNames.r2 || '2R (벳부)';
+                document.getElementById('name_r3').value = savedData.roundNames.r3 || '3R (유후)';
+                document.getElementById('name_r4').value = savedData.roundNames.r4 || '4R (로렐)';
+            }
+
+            tbody.innerHTML = '';
+            players.forEach((player, index) => {
+                const data = savedData[player] || { hcp: '', r1: '', r2: '', r3: '', r4: '' };
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition";
+                tr.innerHTML = `
+                    <td class="py-2 px-2 font-bold text-slate-800 text-center">${player}</td>
+                    <td class="py-1 px-1"><input type="number" id="hcp_${index}" value="${data.hcp}" oninput="calculateRankings()" class="w-10 text-center py-1 border border-slate-200 rounded text-xs bg-slate-50 focus:bg-white focus:border-blue-500 focus:outline-none"></td>
+                    <td class="py-1 px-1"><input type="number" id="r1_${index}" value="${data.r1}" oninput="calculateRankings()" class="w-11 text-center py-1 border border-slate-200 rounded text-xs focus:border-blue-500 focus:outline-none"></td>
+                    <td class="py-1 px-1"><input type="number" id="r2_${index}" value="${data.r2}" oninput="calculateRankings()" class="w-11 text-center py-1 border border-slate-200 rounded text-xs focus:border-blue-500 focus:outline-none"></td>
+                    <td class="py-1 px-1"><input type="number" id="r3_${index}" value="${data.r3}" oninput="calculateRankings()" class="w-11 text-center py-1 border border-slate-200 rounded text-xs focus:border-blue-500 focus:outline-none"></td>
+                    <td class="py-1 px-1"><input type="number" id="r4_${index}" value="${data.r4}" oninput="calculateRankings()" class="w-11 text-center py-1 border border-slate-200 rounded text-xs focus:border-blue-500 focus:outline-none"></td>
+                    <td id="avg_${index}" class="py-2 px-2 font-bold text-blue-600 bg-blue-50/30 text-center">-</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            calculateRankings();
+        }
+
+        function calculateRankings() {
+            const container = document.getElementById('rankingContainer');
+            container.innerHTML = `<h4 class="font-bold text-slate-900 text-sm flex items-center border-b border-slate-100 pb-2">
+                <i class="fa-solid fa-trophy text-amber-500 mr-2"></i> 실시간 라운드별 리더보드
+            </h4>`;
+
+            const rounds = ['r1', 'r2', 'r3', 'r4'];
+            const roundNames = [
+                document.getElementById('name_r1').value || '1라운드',
+                document.getElementById('name_r2').value || '2라운드',
+                document.getElementById('name_r3').value || '3라운드',
+                document.getElementById('name_r4').value || '4라운드'
+            ];
+            let hasAnyData = false;
+
+            players.forEach((player, pIndex) => {
+                let totalGross = 0;
+                let playedRounds = 0;
+                rounds.forEach(round => {
+                    const scoreInput = document.getElementById(`${round}_${pIndex}`).value;
+                    if (scoreInput) {
+                        totalGross += parseFloat(scoreInput);
+                        playedRounds++;
+                    }
+                });
+
+                const avgCell = document.getElementById(`avg_${pIndex}`);
+                if (playedRounds > 0) {
+                    avgCell.innerHTML = (totalGross / playedRounds).toFixed(1);
+                } else {
+                    avgCell.innerHTML = '-';
+                }
+            });
+
+            rounds.forEach((round, rIndex) => {
+                let roundData = [];
+                players.forEach((player, pIndex) => {
+                    const hcpInput = document.getElementById(`hcp_${pIndex}`).value;
+                    const scoreInput = document.getElementById(`${round}_${pIndex}`).value;
+
+                    if (scoreInput) { 
+                        const hcp = parseFloat(hcpInput) || 0;
+                        const gross = parseFloat(scoreInput);
+                        const net = gross - hcp;
+                        roundData.push({ player, gross, net });
+                    }
+                });
+
+                if (roundData.length > 0) {
+                    hasAnyData = true;
+
+                    roundData.sort((a, b) => a.net - b.net);
+                    const minNet = roundData[0].net;
+                    const netWinners = roundData.filter(d => d.net === minNet).map(d => d.player).join(', ');
+
+                    const grossSorted = [...roundData].sort((a, b) => a.gross - b.gross);
+                    const minGross = grossSorted[0].gross;
+                    const grossWinners = grossSorted.filter(d => d.gross === minGross).map(d => d.player).join(', ');
+
+                    let currentRank = 1;
+                    let rankHtmlArr = [];
+                    for(let i = 0; i < roundData.length; i++) {
+                        if(i > 0 && roundData[i].net > roundData[i-1].net) {
+                            currentRank = i + 1;
+                        }
+                        rankHtmlArr.push(`${currentRank}위 ${roundData[i].player}(Net ${roundData[i].net})`);
+                    }
+                    const ranksText = rankHtmlArr.join(' | ');
+
+                    let cardHtml = `
+                        <div class="bg-blue-50/60 p-3.5 rounded-xl border border-blue-100 space-y-1 text-xs">
+                            <div class="font-bold text-blue-900 text-xs mb-1 flex items-center justify-between">
+                                <span>⛳ [${roundNames[rIndex]}] 결과</span>
+                            </div>
+                            <div class="text-slate-800">🏆 <strong>Net 챔피언:</strong> <span class="text-blue-700 font-bold">${netWinners}</span> (Net ${minNet}타)</div>
+                            <div class="text-slate-800">🥇 <strong>Gross 메달리스트:</strong> <span class="text-emerald-700 font-bold">${grossWinners}</span> (Gross ${minGross}타)</div>
+                            <div class="text-[11px] text-slate-500 pt-1 border-t border-blue-100/80 leading-relaxed">${ranksText}</div>
+                        </div>
+                    `;
+                    container.innerHTML += cardHtml;
+                }
+            });
+
+            if (!hasAnyData) {
+                container.innerHTML += '<p class="text-xs text-slate-400 py-1">선수별 스코어와 핸디캡을 입력하시면 라운드별 승자 및 리더보드가 자동으로 업데이트됩니다.</p>';
+            }
+        }
+
+        function saveScores() {
+            const dataToSave = {
+                roundNames: {
+                    r1: document.getElementById('name_r1').value,
+                    r2: document.getElementById('name_r2').value,
+                    r3: document.getElementById('name_r3').value,
+                    r4: document.getElementById('name_r4').value
+                }
+            };
+
+            players.forEach((player, index) => {
+                dataToSave[player] = {
+                    hcp: document.getElementById(`hcp_${index}`).value,
+                    r1: document.getElementById(`r1_${index}`).value,
+                    r2: document.getElementById(`r2_${index}`).value,
+                    r3: document.getElementById(`r3_${index}`).value,
+                    r4: document.getElementById(`r4_${index}`).value,
+                };
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
+            showToast('기기에 스코어가 성공적으로 저장되었습니다! 💾', '🎉');
+        }
+
+        // Kakao & Web Share Actions
+        function shareKakao() {
+            // Check Native Web Share API first
+            if (navigator.share) {
+                const currentUrl = window.location.href;
+                navigator.share({
+                    title: '2026 후쿠오카 골프 & 시티 투어',
+                    text: '⛳ 2026 후쿠오카 골프 & 시티 투어 일정 및 스코어보드를 확인하세요!',
+                    url: currentUrl
+                }).then(() => {
+                    showToast('공유가 완료되었습니다!', '🚀');
+                }).catch(() => {
+                    openShareModal();
+                });
+            } else {
+                openShareModal();
+            }
+        }
+
+        function openShareModal() {
+            document.getElementById('shareModal').classList.remove('hidden');
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').classList.add('hidden');
+        }
+
+        function copyCurrentLink() {
+            const currentUrl = window.location.href;
+            const input = document.createElement('textarea');
+            input.value = currentUrl;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+            
+            closeShareModal();
+            showToast('웹 애플리케이션 주소가 복사되었습니다! 카톡에 붙여넣으세요.', '🔗');
+        }
+
+        function copyFormattedScoreText() {
+            let shareText = `⛳ [2026 후쿠오카 골프 & 시티 투어]\n🗓 일정: 2026.10.02 ~ 10.05 (3박 4일)\n\n📊 [중간 스코어 요약]\n`;
+            
+            players.forEach((player, pIndex) => {
+                const r1 = document.getElementById(`r1_${pIndex}`).value || '-';
+                const r2 = document.getElementById(`r2_${pIndex}`).value || '-';
+                const r3 = document.getElementById(`r3_${pIndex}`).value || '-';
+                const r4 = document.getElementById(`r4_${pIndex}`).value || '-';
+                shareText += `• ${player}: 1R(${r1}) | 2R(${r2}) | 3R(${r3}) | 4R(${r4})\n`;
+            });
+
+            shareText += `\n📲 링크: ${window.location.href}`;
+
+            const input = document.createElement('textarea');
+            input.value = shareText;
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+
+            closeShareModal();
+            showToast('스코어 요약 텍스트가 복사되었습니다! 카톡으로 전송하세요.', '📋');
+        }
+
+        // Initialize script on page load
+        renderTable();
+
+        const CUSTOM_URL_KEY = 'fukuokaTourCustomUrl_2026';
+
+        // 404 임시 가상 주소 검증 및 정제 함수
+        function getValidShareUrl() {
+            const savedUrl = localStorage.getItem(CUSTOM_URL_KEY);
+            if (savedUrl && savedUrl.trim().length > 0) {
+                return savedUrl.trim();
+            }
+            const currentUrl = window.location.href;
+            // 임시 가상 UUID 주소나 blob/srcdoc 검수
+            const isTempUuid = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(currentUrl) || currentUrl.startsWith('blob:') || currentUrl.includes('about:srcdoc');
+            if (isTempUuid) {
+                return ''; // 404 오류를 일으키는 가상 주소 제외
+            }
+            return currentUrl;
+        }
+
+        function saveCustomUrl() {
+            const val = document.getElementById('customWebUrl').value;
+            localStorage.setItem(CUSTOM_URL_KEY, val);
+            showToast('웹사이트 주소가 저장되었습니다.', '🌐');
+        }
+
+        function shareKakao() {
+            openShareModal();
+        }
+
+        function openShareModal() {
+            const savedUrl = localStorage.getItem(CUSTOM_URL_KEY) || '';
+            const urlInput = document.getElementById('customWebUrl');
+            if (urlInput) urlInput.value = savedUrl;
+            document.getElementById('shareModal').classList.remove('hidden');
+        }
+
+        function closeShareModal() {
+            document.getElementById('shareModal').classList.add('hidden');
+        }
+
+        function copyCurrentLink() {
+            const validUrl = getValidShareUrl();
+            if (!validUrl) {
+                showToast('웹에 게시된 실제 주소를 설정란에 입력해 주세요!', '⚠️');
+                return;
+            }
+            copyToClipboard(validUrl);
+            closeShareModal();
+            showToast('웹 애플리케이션 주소가 복사되었습니다!', '🔗');
+        }
+
+        function copyFormattedScoreText() {
+            let shareText = `⛳ [2026 후쿠오카 골프 & 시티 투어]\n🗓 일정: 2026.10.02 ~ 10.05 (3박 4일)\n\n📊 [실시간 스코어 요약]\n`;
+            
+            players.forEach((player, pIndex) => {
+                const r1 = document.getElementById(`r1_${pIndex}`)?.value || '-';
+                const r2 = document.getElementById(`r2_${pIndex}`)?.value || '-';
+                const r3 = document.getElementById(`r3_${pIndex}`)?.value || '-';
+                const r4 = document.getElementById(`r4_${pIndex}`)?.value || '-';
+                shareText += `• ${player}: 1R(${r1}) | 2R(${r2}) | 3R(${r3}) | 4R(${r4})\n`;
+            });
+
+            const validUrl = getValidShareUrl();
+            if (validUrl) {
+                shareText += `\n📲 접속 링크: ${validUrl}`;
+            }
+
+            copyToClipboard(shareText);
+            closeShareModal();
+            showToast('스코어 요약이 복사되었습니다! 카톡방에 붙여넣으세요.', '📋');
+        }
+
+        function copyToClipboard(text) {
+            const input = document.createElement('textarea');
+            input.value = text;
+            input.style.position = 'fixed';
+            input.style.opacity = '0';
+            document.body.appendChild(input);
+            input.select();
+            document.execCommand('copy');
+            document.body.removeChild(input);
+        }
+    </script>
+</body>
+</html>
+```
