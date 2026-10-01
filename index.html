@@ -8,18 +8,18 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-        body { 
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; 
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
             -webkit-tap-highlight-color: transparent;
             word-break: keep-all;
         }
         /* Tab Visibility Control */
         .tab-content { display: none !important; }
         .tab-content.active { display: block !important; }
-        
+
         /* Custom scrollbar for mobile score table */
         .custom-scrollbar::-webkit-scrollbar {
             height: 6px;
@@ -47,6 +47,7 @@
                 </div>
             </div>
             <div class="flex items-center space-x-2">
+                <span id="syncStatus" class="bg-slate-500/20 text-slate-300 text-[11px] font-semibold px-2.5 py-1 rounded-full border border-slate-500/30" title="Firebase 연결 상태">⏳ 연결 중</span>
                 <span class="bg-emerald-500/20 text-emerald-300 text-[11px] font-semibold px-2.5 py-1 rounded-full border border-emerald-500/30">8명 확정</span>
                 <button onclick="openShareModal()" class="bg-[#FEE500] hover:bg-[#fada00] text-[#191919] font-bold text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition shadow-sm cursor-pointer" title="카카오톡 공유">
                     <i class="fa-solid fa-comment text-sm"></i>
@@ -304,17 +305,17 @@
                 <span class="text-xs font-bold text-slate-700">🏌 실시간 스코어 입력</span>
                 <span class="text-[11px] text-slate-500">Net 타수 = Gross - Hcp</span>
             </div>
-            
+
             <div class="overflow-x-auto custom-scrollbar">
                 <table id="scoreTable" class="w-full text-center text-xs">
                     <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
                         <tr>
                             <th class="py-2.5 px-2">선수</th>
                             <th class="py-2.5 px-1 w-12">Hcp</th>
-                            <th class="py-2.5 px-1"><input type="text" id="name_r1" value="1R (센트럴)" oninput="calculateRankings()" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
-                            <th class="py-2.5 px-1"><input type="text" id="name_r2" value="2R (벳부)" oninput="calculateRankings()" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
-                            <th class="py-2.5 px-1"><input type="text" id="name_r3" value="3R (유후)" oninput="calculateRankings()" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
-                            <th class="py-2.5 px-1"><input type="text" id="name_r4" value="4R (로렐)" oninput="calculateRankings()" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
+                            <th class="py-2.5 px-1"><input type="text" id="name_r1" value="1R (센트럴)" oninput="calculateRankings(); saveScores();" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
+                            <th class="py-2.5 px-1"><input type="text" id="name_r2" value="2R (벳부)" oninput="calculateRankings(); saveScores();" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
+                            <th class="py-2.5 px-1"><input type="text" id="name_r3" value="3R (유후)" oninput="calculateRankings(); saveScores();" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
+                            <th class="py-2.5 px-1"><input type="text" id="name_r4" value="4R (로렐)" oninput="calculateRankings(); saveScores();" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
                             <th class="py-2.5 px-2 bg-blue-50/50 text-blue-900">평균</th>
                         </tr>
                     </thead>
@@ -329,8 +330,8 @@
             <h4 class="font-bold text-slate-900 text-sm flex items-center">
                 <i class="fa-solid fa-camera text-blue-600 mr-2"></i> 라운드별 스코어카드 사진 다중 첨부
             </h4>
-            <p class="text-[11px] text-slate-500">각 라운드별로 여러 장의 스코어카드 및 기념 사진을 동시에 선택하여 업로드할 수 있습니다.</p>
-            
+            <p class="text-[11px] text-slate-500">각 라운드별로 여러 장의 스코어카드 및 기념 사진을 동시에 선택하여 업로드할 수 있습니다. (자동 축소 저장)</p>
+
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col items-center text-center space-y-2">
                     <span id="label_photo_r1" class="text-xs font-bold text-slate-800 truncate w-full">1R 스코어카드</span>
@@ -376,7 +377,7 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button type="button" onclick="saveScores()" class="py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md transition transform active:scale-98 flex items-center justify-center space-x-2 cursor-pointer">
+            <button type="button" onclick="saveScores(true)" class="py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md transition transform active:scale-98 flex items-center justify-center space-x-2 cursor-pointer">
                 <i class="fa-solid fa-cloud-arrow-up"></i>
                 <span>스코어 저장 (Firebase)</span>
             </button>
@@ -399,7 +400,7 @@
                 </button>
             </div>
             <p class="text-[11px] sm:text-xs text-slate-500">참가 인원을 설정하고 실제 정산에 참여하는 멤버들의 이름을 자유롭게 수정·추가하세요.</p>
-            
+
             <div class="flex items-center space-x-3 text-xs">
                 <label class="font-bold text-slate-700 shrink-0">참가 인원수 (N):</label>
                 <input type="number" id="settlementMemberCount" value="8" min="1" max="30" onchange="adjustSettlementMembersCount()" class="w-16 px-2.5 py-1.5 border border-slate-300 rounded-lg font-bold text-center text-blue-700 focus:outline-none focus:border-blue-500">
@@ -463,7 +464,7 @@
                     <span>총 지출 합계 (누적)</span>
                     <span id="totalExpenseDisplay" class="text-blue-700 text-base sm:text-lg">0 원</span>
                 </div>
-                
+
                 <div class="flex items-center justify-between gap-2">
                     <span class="font-bold text-slate-700">1인당 기본 분담금 (N/1):</span>
                     <div class="flex items-center space-x-1">
@@ -505,7 +506,7 @@
                     <span>메모 추가하기</span>
                 </button>
             </div>
-            
+
             <textarea id="newNoteInput" rows="4" placeholder="준비물 체크리스트, 방문할 맛집, 기타 주의사항 등을 자유롭게 기재해 두세요..." class="w-full p-3 border border-slate-200 rounded-xl text-xs sm:text-sm leading-relaxed focus:outline-none focus:border-amber-500 resize-y bg-slate-50/50 min-h-[90px]"></textarea>
         </div>
 
@@ -553,7 +554,7 @@
     </div>
 
     <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-full shadow-lg border border-slate-700/50 opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center space-x-2">
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/90 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-full shadow-lg border border-slate-700/50 opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center space-x-2 max-w-[92vw]">
         <span id="toastIcon">ℹ️</span>
         <span id="toastMsg">알림 메세지</span>
     </div>
@@ -585,7 +586,7 @@
                     <span>🔗 웹 애플리케이션 링크 복사</span>
                 </button>
             </div>
-            
+
             <div class="pt-1">
                 <button type="button" onclick="closeShareModal()" class="w-full py-2 text-slate-500 font-semibold text-xs hover:bg-slate-100 rounded-lg cursor-pointer">
                     닫기
@@ -597,8 +598,11 @@
     <!-- MAIN APP SCRIPT -->
     <script>
         const players = ['원석', '종희', '선우', '영규', '지윤', '호준', '동민', '현주'];
+        const FIREBASE_COLLECTION = "fukuokaTour";
         const FIREBASE_SCORE_DOC = "fukuoka_scores_2026";
         const FIREBASE_SETTLEMENT_DOC = "fukuoka_settlement_2026";
+        const LS_SCORE_KEY = "fukuoka_scores_2026_local";
+        const LS_SETTLEMENT_KEY = "fukuoka_settlement_2026_local";
 
         let roundPhotos = { r1: [], r2: [], r3: [], r4: [] };
         let expenses = [];
@@ -608,8 +612,11 @@
 
         let isSettlementLoaded = false;
         let isScoreLoaded = false;
+        let firebaseReady = false;   // onSnapshot 이 최소 1회 정상 수신되면 true
+        let lastFirebaseError = null;
 
-        function showToast(msg, icon = 'ℹ️') {
+        /* ---------------- 공통 UI ---------------- */
+        function showToast(msg, icon = 'ℹ️', duration = 3000) {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toastMsg');
             const toastIcon = document.getElementById('toastIcon');
@@ -620,10 +627,59 @@
             toast.classList.remove('opacity-0', 'pointer-events-none');
             toast.classList.add('opacity-100');
 
-            setTimeout(() => {
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => {
                 toast.classList.remove('opacity-100');
                 toast.classList.add('opacity-0', 'pointer-events-none');
-            }, 3000);
+            }, duration);
+        }
+
+        function setSyncStatus(state, detail) {
+            const el = document.getElementById('syncStatus');
+            if (!el) return;
+            el.className = "text-[11px] font-semibold px-2.5 py-1 rounded-full border";
+            if (state === 'online') {
+                el.classList.add('bg-emerald-500/20', 'text-emerald-300', 'border-emerald-500/30');
+                el.innerText = '🟢 실시간 공유';
+                el.title = 'Firebase Firestore 연결됨';
+            } else if (state === 'error') {
+                el.classList.add('bg-rose-500/20', 'text-rose-300', 'border-rose-500/30');
+                el.innerText = '🔴 로컬 모드';
+                el.title = detail || 'Firebase 연결 실패 (이 기기에만 저장됨)';
+            } else {
+                el.classList.add('bg-slate-500/20', 'text-slate-300', 'border-slate-500/30');
+                el.innerText = '⏳ 연결 중';
+                el.title = 'Firebase 연결 시도 중';
+            }
+        }
+
+        function describeFirebaseError(e) {
+            const code = (e && e.code) ? String(e.code).toLowerCase() : '';
+            const msg = (e && e.message) ? String(e.message) : String(e);
+            if (code.includes('permission_denied') || code.includes('permission-denied') || /permission.denied/i.test(msg)) {
+                return 'Realtime Database 규칙이 읽기/쓰기를 차단 중 (Firebase 콘솔 > Realtime Database > 규칙에서 read/write 허용 필요)';
+            }
+            if (code.includes('not-found') || /does not exist|NOT_FOUND/i.test(msg)) {
+                return 'Realtime Database 가 없음 (Firebase 콘솔 > Realtime Database > 데이터베이스 만들기)';
+            }
+            if (code.includes('unavailable') || code.includes('network') || /network|offline|fetch|failed to load/i.test(msg)) {
+                return '네트워크 연결 불가 (프록시/방화벽에서 firebasedatabase.app 차단 가능)';
+            }
+            if (/too large|exceeds|size/i.test(msg)) {
+                return '데이터 크기 초과 (사진/영수증을 줄이거나 삭제하세요)';
+            }
+            if (code.includes('unauthenticated')) {
+                return '인증 필요 (규칙이 로그인 사용자만 허용 중)';
+            }
+            return `Firebase 오류: ${code || msg}`;
+        }
+
+        function reportFirebaseError(context, e) {
+            console.error(`[Firebase] ${context}:`, e);
+            lastFirebaseError = e;
+            const desc = describeFirebaseError(e);
+            setSyncStatus('error', desc);
+            showToast(`${context} 실패 → ${desc}`, '🔴', 7000);
         }
 
         function switchTab(tabId) {
@@ -661,63 +717,176 @@
             }
         }
 
+        /* ---------------- 데이터 수집/적용 (Firebase · localStorage 공용) ---------------- */
+        function collectScoreData() {
+            const dataToSave = {
+                roundNames: {
+                    r1: document.getElementById('name_r1')?.value || '',
+                    r2: document.getElementById('name_r2')?.value || '',
+                    r3: document.getElementById('name_r3')?.value || '',
+                    r4: document.getElementById('name_r4')?.value || ''
+                },
+                roundPhotos: roundPhotos,
+                updatedAt: Date.now()
+            };
+            players.forEach((player, index) => {
+                dataToSave[player] = {
+                    hcp: document.getElementById(`hcp_${index}`)?.value || '',
+                    r1: document.getElementById(`r1_${index}`)?.value || '',
+                    r2: document.getElementById(`r2_${index}`)?.value || '',
+                    r3: document.getElementById(`r3_${index}`)?.value || '',
+                    r4: document.getElementById(`r4_${index}`)?.value || '',
+                };
+            });
+            return dataToSave;
+        }
+
+        function applyScoreData(data) {
+            if (!data) return;
+            if (data.roundNames) {
+                updateInputValueIfUnfocused('name_r1', data.roundNames.r1);
+                updateInputValueIfUnfocused('name_r2', data.roundNames.r2);
+                updateInputValueIfUnfocused('name_r3', data.roundNames.r3);
+                updateInputValueIfUnfocused('name_r4', data.roundNames.r4);
+            }
+            const rp = data.roundPhotos || {};
+            roundPhotos = {
+                r1: toArray(rp.r1, []), r2: toArray(rp.r2, []),
+                r3: toArray(rp.r3, []), r4: toArray(rp.r4, [])
+            };
+            players.forEach((player, pIndex) => {
+                if (data[player]) {
+                    updateInputValueIfUnfocused(`hcp_${pIndex}`, data[player].hcp);
+                    updateInputValueIfUnfocused(`r1_${pIndex}`, data[player].r1);
+                    updateInputValueIfUnfocused(`r2_${pIndex}`, data[player].r2);
+                    updateInputValueIfUnfocused(`r3_${pIndex}`, data[player].r3);
+                    updateInputValueIfUnfocused(`r4_${pIndex}`, data[player].r4);
+                }
+            });
+            calculateRankings();
+            updateRoundPhotoUI();
+        }
+
+        function collectSettlementData() {
+            return {
+                members: settlementMembers,
+                expenses: expenses,
+                notesHistory: notesHistory,
+                customPerPersonShare: customPerPersonShare,
+                updatedAt: Date.now()
+            };
+        }
+
+        function applySettlementData(data) {
+            if (data) {
+                // RTDB 는 빈 배열/객체를 저장하지 않으므로(키 자체가 사라짐) 누락 = 빈 목록으로 처리
+                settlementMembers = toArray(data.members, [...players]);
+                expenses = toArray(data.expenses, []);
+                notesHistory = toArray(data.notesHistory, []);
+                customPerPersonShare = (data.customPerPersonShare === undefined || data.customPerPersonShare === null) ? null : data.customPerPersonShare;
+
+                const countInput = document.getElementById('settlementMemberCount');
+                if (countInput && document.activeElement !== countInput) {
+                    countInput.value = settlementMembers.length;
+                }
+                const perPersonInput = document.getElementById('customPerPersonInput');
+                if (perPersonInput && document.activeElement !== perPersonInput) {
+                    perPersonInput.value = customPerPersonShare !== null ? customPerPersonShare : '';
+                }
+            }
+            renderSettlementMembersInputs();
+            updatePayerSelect();
+            renderExpenses();
+            renderNotesHistory();
+        }
+
+        // RTDB 는 배열을 {0:..,1:..} 객체로 돌려줄 수 있음 → 항상 배열로 정규화
+        function toArray(v, fallback) {
+            if (Array.isArray(v)) return v.filter(x => x !== null && x !== undefined);
+            if (v && typeof v === 'object') return Object.keys(v).sort((a, b) => a - b).map(k => v[k]).filter(x => x !== null && x !== undefined);
+            return fallback;
+        }
+
+        /* ---------------- localStorage 폴백 ---------------- */
+        function saveLocal(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                console.warn('localStorage 저장 실패(용량 초과 가능):', e);
+            }
+        }
+        function loadLocal(key) {
+            try {
+                const raw = localStorage.getItem(key);
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        /* ---------------- Firebase 리스너 ---------------- */
         function initFirebaseListeners() {
-            if (!window.db) return;
+            if (!window.fb) return;
+            const fb = window.fb;
+
+            // 0. 연결 상태 표시
+            fb.onValue(fb.ref(fb.db, '.info/connected'), (snap) => {
+                if (snap.val() === true) {
+                    firebaseReady = true;
+                    setSyncStatus('online');
+                } else if (!lastFirebaseError) {
+                    setSyncStatus('connecting');
+                }
+            });
 
             // 1. 스코어 실시간 리스너
-            window.onSnapshot(window.doc(window.db, "fukuokaTour", FIREBASE_SCORE_DOC), (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.roundNames) {
-                        updateInputValueIfUnfocused('name_r1', data.roundNames.r1);
-                        updateInputValueIfUnfocused('name_r2', data.roundNames.r2);
-                        updateInputValueIfUnfocused('name_r3', data.roundNames.r3);
-                        updateInputValueIfUnfocused('name_r4', data.roundNames.r4);
+            fb.onValue(
+                fb.ref(fb.db, `${FIREBASE_COLLECTION}/${FIREBASE_SCORE_DOC}`),
+                (snap) => {
+                    if (snap.exists()) {
+                        const data = snap.val();
+                        applyScoreData(data);
+                        saveLocal(LS_SCORE_KEY, data);
+                    } else if (isScoreLoaded) {
+                        // 서버에서 삭제된 경우 → 화면 초기화
+                        applyScoreData({ roundPhotos: {} });
+                    } else {
+                        // 서버에 아직 데이터 없음 → 로컬 데이터가 있으면 서버로 올려 둠
+                        const local = loadLocal(LS_SCORE_KEY);
+                        if (local) saveScores();
                     }
-                    if (data.roundPhotos) {
-                        roundPhotos = data.roundPhotos;
-                    }
-                    players.forEach((player, pIndex) => {
-                        if (data[player]) {
-                            updateInputValueIfUnfocused(`hcp_${pIndex}`, data[player].hcp);
-                            updateInputValueIfUnfocused(`r1_${pIndex}`, data[player].r1);
-                            updateInputValueIfUnfocused(`r2_${pIndex}`, data[player].r2);
-                            updateInputValueIfUnfocused(`r3_${pIndex}`, data[player].r3);
-                            updateInputValueIfUnfocused(`r4_${pIndex}`, data[player].r4);
-                        }
-                    });
-                }
-                calculateRankings();
-                updateRoundPhotoUI();
-                isScoreLoaded = true;
-            });
+                    isScoreLoaded = true;
+                },
+                (err) => reportFirebaseError('스코어 실시간 수신', err)
+            );
 
             // 2. 정산 및 메모 실시간 리스너
-            window.onSnapshot(window.doc(window.db, "fukuokaTour", FIREBASE_SETTLEMENT_DOC), (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    if (data.members && Array.isArray(data.members)) settlementMembers = data.members;
-                    if (data.expenses && Array.isArray(data.expenses)) expenses = data.expenses;
-                    if (data.notesHistory && Array.isArray(data.notesHistory)) notesHistory = data.notesHistory;
-                    if (data.customPerPersonShare !== undefined) customPerPersonShare = data.customPerPersonShare;
-
-                    const countInput = document.getElementById('settlementMemberCount');
-                    if (countInput && document.activeElement !== countInput) {
-                        countInput.value = settlementMembers.length;
+            fb.onValue(
+                fb.ref(fb.db, `${FIREBASE_COLLECTION}/${FIREBASE_SETTLEMENT_DOC}`),
+                (snap) => {
+                    if (snap.exists()) {
+                        const data = snap.val();
+                        applySettlementData(data);
+                        saveLocal(LS_SETTLEMENT_KEY, data);
+                    } else if (isSettlementLoaded) {
+                        applySettlementData({});
+                    } else {
+                        const local = loadLocal(LS_SETTLEMENT_KEY);
+                        if (local && ((local.notesHistory || []).length || (local.expenses || []).length)) saveSettlementToFirebase();
                     }
-
-                    const perPersonInput = document.getElementById('customPerPersonInput');
-                    if (perPersonInput && document.activeElement !== perPersonInput) {
-                        perPersonInput.value = customPerPersonShare !== null ? customPerPersonShare : '';
-                    }
-                }
-                renderSettlementMembersInputs();
-                updatePayerSelect();
-                renderExpenses();
-                renderNotesHistory();
-                isSettlementLoaded = true;
-            });
+                    isSettlementLoaded = true;
+                },
+                (err) => reportFirebaseError('메모/정산 실시간 수신', err)
+            );
         }
+
+        /* ---------------- 초기 렌더 (Firebase 와 무관하게 항상 실행) ---------------- */
+        function initApp() {
+            renderTable();
+            applyScoreData(loadLocal(LS_SCORE_KEY));
+            applySettlementData(loadLocal(LS_SETTLEMENT_KEY));
+        }
+        document.addEventListener('DOMContentLoaded', initApp);
 
         function renderTable() {
             const tbody = document.getElementById('scoreBody');
@@ -781,7 +950,7 @@
                     const hcpInput = document.getElementById(`hcp_${pIndex}`)?.value;
                     const scoreInput = document.getElementById(`${round}_${pIndex}`)?.value;
 
-                    if (scoreInput) { 
+                    if (scoreInput) {
                         const hcp = parseFloat(hcpInput) || 0;
                         const gross = parseFloat(scoreInput);
                         const net = gross - hcp;
@@ -829,57 +998,62 @@
             }
         }
 
-        async function saveScores() {
-            if (!window.db) return;
+        async function saveScores(explicit = false) {
+            const dataToSave = collectScoreData();
+            saveLocal(LS_SCORE_KEY, dataToSave);
 
-            const dataToSave = {
-                roundNames: {
-                    r1: document.getElementById('name_r1').value,
-                    r2: document.getElementById('name_r2').value,
-                    r3: document.getElementById('name_r3').value,
-                    r4: document.getElementById('name_r4').value
-                },
-                roundPhotos: roundPhotos
-            };
-
-            players.forEach((player, index) => {
-                dataToSave[player] = {
-                    hcp: document.getElementById(`hcp_${index}`).value,
-                    r1: document.getElementById(`r1_${index}`).value,
-                    r2: document.getElementById(`r2_${index}`).value,
-                    r3: document.getElementById(`r3_${index}`).value,
-                    r4: document.getElementById(`r4_${index}`).value,
-                };
-            });
-
+            if (!window.fb) {
+                if (explicit) showToast('Firebase 미연결 → 이 기기(localStorage)에만 저장됨', '💾');
+                return;
+            }
             try {
-                await window.setDoc(window.doc(window.db, "fukuokaTour", FIREBASE_SCORE_DOC), dataToSave);
+                await window.fb.set(window.fb.ref(window.fb.db, `${FIREBASE_COLLECTION}/${FIREBASE_SCORE_DOC}`), dataToSave);
+                if (explicit) showToast('스코어가 Firebase 에 저장되었습니다!', '☁️');
             } catch (e) {
-                console.error("Firebase Score Save Error:", e);
+                reportFirebaseError('스코어 저장', e);
             }
         }
 
-        function uploadRoundPhoto(roundKey, event) {
-            const files = event.target.files;
-            if (!files || files.length === 0) return;
-
-            let loadedCount = 0;
-            Array.from(files).forEach(file => {
+        /* 사진은 Firestore 문서 1MB 제한 때문에 축소(최대 1024px, JPEG 0.7) 후 저장 */
+        function compressImageFile(file, maxSide = 1024, quality = 0.7) {
+            return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    if (!roundPhotos[roundKey]) roundPhotos[roundKey] = [];
-                    roundPhotos[roundKey].push(e.target.result);
-                    loadedCount++;
-
-                    if (loadedCount === files.length) {
-                        updateRoundPhotoUI();
-                        saveScores();
-                        showToast(`총 ${files.length}장의 사진이 추가되었습니다! 📸`, '✨');
-                        event.target.value = '';
-                    }
+                reader.onerror = reject;
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onerror = () => resolve(e.target.result);
+                    img.onload = () => {
+                        let { width, height } = img;
+                        const scale = Math.min(1, maxSide / Math.max(width, height));
+                        width = Math.round(width * scale);
+                        height = Math.round(height * scale);
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width; canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.src = e.target.result;
                 };
                 reader.readAsDataURL(file);
             });
+        }
+
+        async function uploadRoundPhoto(roundKey, event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            if (!roundPhotos[roundKey]) roundPhotos[roundKey] = [];
+            for (const file of Array.from(files)) {
+                try {
+                    roundPhotos[roundKey].push(await compressImageFile(file));
+                } catch (e) {
+                    console.error('이미지 로드 실패', e);
+                }
+            }
+            updateRoundPhotoUI();
+            await saveScores();
+            showToast(`총 ${files.length}장의 사진이 추가되었습니다! 📸`, '✨');
+            event.target.value = '';
         }
 
         function removeRoundPhoto(roundKey, index) {
@@ -908,7 +1082,7 @@
                         photos.forEach((imgSrc, idx) => {
                             html += `
                                 <div class="relative w-full h-20 rounded bg-slate-900 shrink-0 group overflow-hidden">
-                                    <img src="${imgSrc}" class="w-full h-full object-cover cursor-pointer hover:opacity-90" onclick="openImageModal('${imgSrc}', '${titleVal} #${idx+1}')">
+                                    <img src="${imgSrc}" class="w-full h-full object-cover cursor-pointer hover:opacity-90" onclick="openRoundPhoto('${rk}', ${idx})">
                                     <button type="button" onclick="removeRoundPhoto('${rk}', ${idx})" class="absolute top-1 right-1 bg-slate-900/80 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] hover:bg-rose-600 transition cursor-pointer">
                                         <i class="fa-solid fa-xmark"></i>
                                     </button>
@@ -924,17 +1098,22 @@
             });
         }
 
+        function openRoundPhoto(rk, idx) {
+            const src = (roundPhotos[rk] || [])[idx];
+            if (!src) return;
+            const titleVal = document.getElementById(`name_${rk}`)?.value || rk.toUpperCase();
+            openImageModal(src, `${titleVal} #${idx + 1}`);
+        }
+
         async function saveSettlementToFirebase() {
-            if (!window.db) return;
+            const data = collectSettlementData();
+            saveLocal(LS_SETTLEMENT_KEY, data);
+
+            if (!window.fb) return;
             try {
-                await window.setDoc(window.doc(window.db, "fukuokaTour", FIREBASE_SETTLEMENT_DOC), {
-                    members: settlementMembers,
-                    expenses: expenses,
-                    notesHistory: notesHistory,
-                    customPerPersonShare: customPerPersonShare
-                });
+                await window.fb.set(window.fb.ref(window.fb.db, `${FIREBASE_COLLECTION}/${FIREBASE_SETTLEMENT_DOC}`), data);
             } catch (e) {
-                console.error("Settlement/Notes Save Error:", e);
+                reportFirebaseError('메모/정산 저장', e);
             }
         }
 
@@ -948,7 +1127,7 @@
                 div.className = "flex items-center space-x-1";
                 div.innerHTML = `
                     <span class="text-[10px] font-bold text-slate-400 w-4">${idx+1}</span>
-                    <input type="text" id="member_name_${idx}" value="${name}" oninput="updateSettlementMemberNames()" placeholder="이름" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500">
+                    <input type="text" id="member_name_${idx}" value="${escapeHtml(name)}" oninput="updateSettlementMemberNames()" placeholder="이름" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500">
                 `;
                 container.appendChild(div);
             });
@@ -1007,7 +1186,7 @@
             }
         }
 
-        function addExpense() {
+        async function addExpense() {
             const titleInput = document.getElementById('expenseTitle');
             const amountInput = document.getElementById('expenseAmount');
             const payerSelect = document.getElementById('expensePayer');
@@ -1024,38 +1203,17 @@
                 return;
             }
 
+            let receipt = null;
             const files = receiptInput.files;
             if (files && files.length > 0) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const newExpense = {
-                        id: Date.now(),
-                        title,
-                        amount,
-                        payer,
-                        account,
-                        receipt: e.target.result
-                    };
-                    expenses.push(newExpense);
-                    resetExpenseInputs();
-                    saveSettlementToFirebase();
-                    showToast('지출 내역 및 영수증이 추가되었습니다!', '💰');
-                };
-                reader.readAsDataURL(files[0]);
-            } else {
-                const newExpense = {
-                    id: Date.now(),
-                    title,
-                    amount,
-                    payer,
-                    account,
-                    receipt: null
-                };
-                expenses.push(newExpense);
-                resetExpenseInputs();
-                saveSettlementToFirebase();
-                showToast('지출 내역이 추가되었습니다!', '💰');
+                try { receipt = await compressImageFile(files[0], 800, 0.6); } catch (e) { console.error(e); }
             }
+
+            expenses.push({ id: Date.now(), title, amount, payer, account, receipt });
+            resetExpenseInputs();
+            renderExpenses();
+            saveSettlementToFirebase();
+            showToast(receipt ? '지출 내역 및 영수증이 추가되었습니다!' : '지출 내역이 추가되었습니다!', '💰');
         }
 
         function resetExpenseInputs() {
@@ -1067,6 +1225,7 @@
 
         function deleteExpense(id) {
             expenses = expenses.filter(item => item.id !== id);
+            renderExpenses();
             saveSettlementToFirebase();
             showToast('지출 항목이 삭제되었습니다.', '🗑');
         }
@@ -1074,6 +1233,7 @@
         function clearExpenses() {
             if(confirm('모든 지출 내역을 삭제하시겠습니까?')) {
                 expenses = [];
+                renderExpenses();
                 saveSettlementToFirebase();
                 showToast('모든 지출 항목이 삭제되었습니다.', '🗑');
             }
@@ -1097,6 +1257,11 @@
             showToast('기본 분담금이 1/N 자동 계산으로 초기화되었습니다.', '🔄');
         }
 
+        function openExpenseReceipt(id) {
+            const item = expenses.find(e => e.id === id);
+            if (item && item.receipt) openImageModal(item.receipt, `${item.title} 영수증`);
+        }
+
         function renderExpenses() {
             const listEl = document.getElementById('expenseList');
             const totalDisplay = document.getElementById('totalExpenseDisplay');
@@ -1110,9 +1275,9 @@
                 totalAmount += item.amount;
                 const div = document.createElement('div');
                 div.className = "bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between gap-2";
-                
+
                 let receiptBtn = item.receipt ? `
-                    <button type="button" onclick="openImageModal('${item.receipt}', '${item.title} 영수증')" class="text-[11px] bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded hover:bg-blue-200">
+                    <button type="button" onclick="openExpenseReceipt(${item.id})" class="text-[11px] bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded hover:bg-blue-200">
                         <i class="fa-solid fa-receipt mr-1"></i>영수증
                     </button>
                 ` : '';
@@ -1120,12 +1285,12 @@
                 div.innerHTML = `
                     <div class="space-y-0.5">
                         <div class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5">
-                            <span>${idx+1}. ${item.title}</span>
+                            <span>${idx+1}. ${escapeHtml(item.title)}</span>
                             ${receiptBtn}
                         </div>
                         <div class="text-[11px] text-slate-500">
-                            결제: <strong class="text-slate-800">${item.payer}</strong> | 금액: <strong class="text-blue-700">${item.amount.toLocaleString()}</strong>원/엔
-                            ${item.account ? `<br><span class="text-slate-400">계좌: ${item.account}</span>` : ''}
+                            결제: <strong class="text-slate-800">${escapeHtml(item.payer || '')}</strong> | 금액: <strong class="text-blue-700">${item.amount.toLocaleString()}</strong>원/엔
+                            ${item.account ? `<br><span class="text-slate-400">계좌: ${escapeHtml(item.account)}</span>` : ''}
                         </div>
                     </div>
                     <button type="button" onclick="deleteExpense(${item.id})" class="text-slate-400 hover:text-rose-600 px-2 py-1 cursor-pointer">
@@ -1173,7 +1338,7 @@
                     const card = document.createElement('div');
                     card.className = "p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between flex-wrap gap-1";
                     card.innerHTML = `
-                        <div class="font-bold text-slate-800 text-xs sm:text-sm">${m}</div>
+                        <div class="font-bold text-slate-800 text-xs sm:text-sm">${escapeHtml(m)}</div>
                         <div>${badgeHtml}</div>
                     `;
                     reportEl.appendChild(card);
@@ -1197,7 +1362,7 @@
             });
 
             text += `\n💌 개인별 입금/환급 금액:\n`;
-            
+
             const payerPaidMap = {};
             settlementMembers.forEach(m => payerPaidMap[m] = 0);
             expenses.forEach(item => {
@@ -1216,11 +1381,27 @@
                 }
             });
 
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('정산 내역이 클립보드에 복사되었습니다!', '📋');
-            }).catch(() => {
-                showToast('복사에 실패했습니다.', '❌');
-            });
+            copyToClipboard(text, '정산 내역이 클립보드에 복사되었습니다!');
+        }
+
+        function copyToClipboard(text, successMsg) {
+            const done = () => showToast(successMsg, '📋');
+            const fail = () => showToast('복사에 실패했습니다.', '❌');
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(done).catch(() => legacyCopy(text) ? done() : fail());
+            } else {
+                legacyCopy(text) ? done() : fail();
+            }
+        }
+        function legacyCopy(text) {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                const ok = document.execCommand('copy');
+                document.body.removeChild(ta);
+                return ok;
+            } catch (e) { return false; }
         }
 
         function saveNewNote() {
@@ -1244,7 +1425,7 @@
 
             notesHistory.unshift(newNote);
             input.value = '';
-            
+
             renderNotesHistory();
             saveSettlementToFirebase();
             showToast('새 메모가 누적 저장되었습니다!', '📝');
@@ -1274,7 +1455,7 @@
             if (!container) return;
 
             const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
-            const filtered = notesHistory.filter(n => n.content.toLowerCase().includes(keyword));
+            const filtered = notesHistory.filter(n => (n.content || '').toLowerCase().includes(keyword));
 
             if (badge) badge.innerText = notesHistory.length;
 
@@ -1307,7 +1488,7 @@
         }
 
         function escapeHtml(text) {
-            return text
+            return String(text ?? '')
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
@@ -1318,10 +1499,7 @@
         function copySingleNote(id) {
             const note = notesHistory.find(n => n.id == id);
             if (!note) return;
-
-            navigator.clipboard.writeText(note.content).then(() => {
-                showToast('선택한 메모가 복사되었습니다.', '📋');
-            });
+            copyToClipboard(note.content, '선택한 메모가 복사되었습니다.');
         }
 
         function copyAllNotesText() {
@@ -1335,9 +1513,7 @@
                 text += `${i + 1}. (${n.date})\n${n.content}\n\n`;
             });
 
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('전체 메모가 클립보드에 복사되었습니다!', '📋');
-            });
+            copyToClipboard(text, '전체 메모가 클립보드에 복사되었습니다!');
         }
 
         function openImageModal(src, title = '이미지 미리보기') {
@@ -1367,10 +1543,8 @@
         }
 
         function copyCurrentLink() {
-            navigator.clipboard.writeText(window.location.href).then(() => {
-                showToast('현재 웹페이지 링크가 복사되었습니다!', '🔗');
-                closeShareModal();
-            });
+            copyToClipboard(window.location.href, '현재 웹페이지 링크가 복사되었습니다!');
+            closeShareModal();
         }
 
         function copyFormattedScoreText() {
@@ -1406,42 +1580,50 @@
 
             text += `\n[자세히 보기]\n${window.location.href}`;
 
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('스코어 요약이 복사되었습니다!', '📋');
-                closeShareModal();
-            }).catch(() => {
-                showToast('복사에 실패했습니다.', '❌');
-            });
+            copyToClipboard(text, '스코어 요약이 복사되었습니다!');
+            closeShareModal();
         }
     </script>
 
     <!-- FIREBASE INIT SCRIPT -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        // 이 프로젝트에는 Firestore 가 아닌 "Realtime Database"(asia-southeast1) 가 생성되어 있으므로 RTDB SDK 사용
+        // CDN 로드 실패(프록시/오프라인)나 초기화 실패 시에도 앱 본체는 동작하도록 동적 import + try/catch
+        (async () => {
+            try {
+                const [{ initializeApp }, rtdb] = await Promise.all([
+                    import("https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"),
+                    import("https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js")
+                ]);
+                const { getDatabase, ref, set, get, onValue } = rtdb;
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyD1H2dViopwFAiHIWAJPzI7s0SqBDAGels",
-            authDomain: "hukuoka-tour2026.firebaseapp.com",
-            databaseURL: "https://hukuoka-tour2026-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "hukuoka-tour2026",
-            storageBucket: "hukuoka-tour2026.firebasestorage.app",
-            messagingSenderId: "182409782645",
-            appId: "1:182409782645:web:b59615e9dee3f35f915f3c"
-        };
+                const firebaseConfig = {
+                    apiKey: "AIzaSyD1H2dViopwFAiHIWAJPzI7s0SqBDAGels",
+                    authDomain: "hukuoka-tour2026.firebaseapp.com",
+                    databaseURL: "https://hukuoka-tour2026-default-rtdb.asia-southeast1.firebasedatabase.app",
+                    projectId: "hukuoka-tour2026",
+                    storageBucket: "hukuoka-tour2026.firebasestorage.app",
+                    messagingSenderId: "182409782645",
+                    appId: "1:182409782645:web:b59615e9dee3f35f915f3c"
+                };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        window.db = db;
-        window.doc = doc;
-        window.setDoc = setDoc;
-        window.getDoc = getDoc;
-        window.onSnapshot = onSnapshot;
+                const app = initializeApp(firebaseConfig);
+                const db = getDatabase(app);
 
-        // 테이블 기본 뼈대를 먼저 그린다음 Firebase 리스너를 붙여 실시간 동기화 시작
-        if (typeof renderTable === 'function') renderTable();
-        if (typeof initFirebaseListeners === 'function') initFirebaseListeners();
+                // 실제 접근 가능 여부를 1회 읽기로 즉시 확인 → 규칙/네트워크 문제를 바로 표시
+                try {
+                    await get(ref(db, `${FIREBASE_COLLECTION}/${FIREBASE_SETTLEMENT_DOC}/updatedAt`));
+                } catch (e) {
+                    reportFirebaseError('Realtime Database 접근 확인', e);
+                    return; // 로컬 모드 유지
+                }
+
+                window.fb = { db, ref, set, get, onValue };
+                initFirebaseListeners();
+            } catch (e) {
+                reportFirebaseError('Firebase SDK 로드/초기화', e);
+            }
+        })();
     </script>
 </body>
 </html>
