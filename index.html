@@ -43,7 +43,7 @@
                 <span class="text-2xl">⛳</span>
                 <div>
                     <h1 class="text-base sm:text-lg font-bold tracking-tight">2026 후쿠오카 골프 & 시티 투어</h1>
-                    <p class="text-xs text-slate-400">2026.10.02(금) - 10.05(월) | 3박 4일</p>
+                    <p class="text-xs text-slate-400">2026.10.02(금) - 10.05(월) | 3박 4일 <span class="text-slate-500">· v2.1</span></p>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
@@ -186,6 +186,14 @@
             </div>
 
             <div class="space-y-3 text-xs text-slate-700">
+                <div class="bg-yellow-100 border-2 border-yellow-400 rounded-xl p-3.5 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl">🔑</span>
+                        <span class="font-bold text-yellow-900 text-sm">숙소 출입 비번</span>
+                    </div>
+                    <span class="font-black text-2xl tracking-[0.25em] text-slate-900 bg-yellow-300 px-3 py-1 rounded-lg select-all">602602</span>
+                </div>
+
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-start justify-between">
                     <div>
                         <div class="font-bold text-slate-900">주소</div>
@@ -311,6 +319,7 @@
                     <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
                         <tr>
                             <th class="py-2.5 px-2">선수</th>
+                            <th class="py-2.5 px-1 w-14">조</th>
                             <th class="py-2.5 px-1 w-12">Hcp</th>
                             <th class="py-2.5 px-1"><input type="text" id="name_r1" value="1R (센트럴)" oninput="calculateRankings(); saveScores();" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
                             <th class="py-2.5 px-1"><input type="text" id="name_r2" value="2R (벳부)" oninput="calculateRankings(); saveScores();" class="w-full text-center font-bold bg-transparent border-b border-dashed border-slate-400 focus:outline-none text-[11px]"></th>
@@ -598,6 +607,8 @@
     <!-- MAIN APP SCRIPT -->
     <script>
         const players = ['원석', '종희', '선우', '영규', '지윤', '호준', '동민', '현주'];
+        const TEAMS = ['A조', 'B조', 'C조', 'D조'];
+        const TEAM_COLORS = { 'A조': 'bg-blue-100 text-blue-800', 'B조': 'bg-emerald-100 text-emerald-800', 'C조': 'bg-amber-100 text-amber-800', 'D조': 'bg-purple-100 text-purple-800' };
         const FIREBASE_COLLECTION = "fukuokaTour";
         const FIREBASE_SCORE_DOC = "fukuoka_scores_2026";
         const FIREBASE_SETTLEMENT_DOC = "fukuoka_settlement_2026";
@@ -731,6 +742,7 @@
             };
             players.forEach((player, index) => {
                 dataToSave[player] = {
+                    team: document.getElementById(`team_${index}`)?.value || '',
                     hcp: document.getElementById(`hcp_${index}`)?.value || '',
                     r1: document.getElementById(`r1_${index}`)?.value || '',
                     r2: document.getElementById(`r2_${index}`)?.value || '',
@@ -756,6 +768,7 @@
             };
             players.forEach((player, pIndex) => {
                 if (data[player]) {
+                    updateInputValueIfUnfocused(`team_${pIndex}`, data[player].team);
                     updateInputValueIfUnfocused(`hcp_${pIndex}`, data[player].hcp);
                     updateInputValueIfUnfocused(`r1_${pIndex}`, data[player].r1);
                     updateInputValueIfUnfocused(`r2_${pIndex}`, data[player].r2);
@@ -894,12 +907,13 @@
             tbody.innerHTML = '';
 
             players.forEach((player, pIndex) => {
-                let defaultHcp = pIndex < 2 ? '10' : '15';
+                const teamOptions = ['', ...TEAMS].map(t => `<option value="${t}">${t || '-'}</option>`).join('');
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition";
                 tr.innerHTML = `
                     <td class="py-3 px-2 font-bold text-slate-900 whitespace-nowrap">${player}</td>
-                    <td class="py-3 px-1"><input type="number" id="hcp_${pIndex}" value="${defaultHcp}" oninput="calculateRankings(); saveScores();" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
+                    <td class="py-3 px-1"><select id="team_${pIndex}" onchange="calculateRankings(); saveScores();" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-bold text-slate-700 focus:bg-white focus:outline-none text-xs">${teamOptions}</select></td>
+                    <td class="py-3 px-1"><input type="number" id="hcp_${pIndex}" value="" placeholder="-" oninput="calculateRankings(); saveScores();" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
                     <td class="py-3 px-1"><input type="number" id="r1_${pIndex}" value="" oninput="calculateRankings(); saveScores();" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
                     <td class="py-3 px-1"><input type="number" id="r2_${pIndex}" value="" oninput="calculateRankings(); saveScores();" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
                     <td class="py-3 px-1"><input type="number" id="r3_${pIndex}" value="" oninput="calculateRankings(); saveScores();" class="w-full text-center py-1 bg-slate-50 border border-slate-200 rounded font-semibold text-slate-700 focus:bg-white focus:outline-none text-xs"></td>
@@ -996,6 +1010,83 @@
             if (!hasAnyData) {
                 container.innerHTML += '<p class="text-xs text-slate-400 py-1">선수별 스코어와 핸디캡을 입력하시면 라운드별 승자 및 리더보드가 자동으로 업데이트됩니다.</p>';
             }
+
+            renderTeamTotals(container, rounds, roundNames);
+        }
+
+        // 조별(팀) 합산: 라운드별 Gross/Net 합계 + 전체 합계. 스코어가 입력된 선수만 집계.
+        function computeTeamTotals(rounds) {
+            const teams = {};
+            players.forEach((player, pIndex) => {
+                const team = document.getElementById(`team_${pIndex}`)?.value;
+                if (!team) return;
+                if (!teams[team]) teams[team] = { members: [], rounds: {}, totalGross: 0, totalNet: 0, totalCount: 0 };
+                teams[team].members.push(player);
+                const hcp = parseFloat(document.getElementById(`hcp_${pIndex}`)?.value) || 0;
+                rounds.forEach(r => {
+                    const v = document.getElementById(`${r}_${pIndex}`)?.value;
+                    if (!v) return;
+                    const gross = parseFloat(v);
+                    if (isNaN(gross)) return;
+                    const rr = teams[team].rounds[r] || (teams[team].rounds[r] = { gross: 0, net: 0, count: 0 });
+                    rr.gross += gross; rr.net += gross - hcp; rr.count++;
+                    teams[team].totalGross += gross; teams[team].totalNet += gross - hcp; teams[team].totalCount++;
+                });
+            });
+            return teams;
+        }
+
+        function renderTeamTotals(container, rounds, roundNames) {
+            const teams = computeTeamTotals(rounds);
+            const teamNames = TEAMS.filter(t => teams[t]);
+            if (teamNames.length === 0) return;
+
+            // 전체 Net 합계가 낮은 조가 상위 (미입력 조는 뒤로)
+            const ordered = [...teamNames].sort((a, b) => {
+                const A = teams[a], B = teams[b];
+                if (A.totalCount === 0 && B.totalCount === 0) return 0;
+                if (A.totalCount === 0) return 1;
+                if (B.totalCount === 0) return -1;
+                return A.totalNet - B.totalNet;
+            });
+
+            const fmt = n => Number.isInteger(n) ? n : n.toFixed(1);
+            let head = `<th class="py-1.5 px-2 text-left">조 (인원)</th>`;
+            rounds.forEach((r, i) => head += `<th class="py-1.5 px-1 whitespace-nowrap">${escapeHtml(roundNames[i])}</th>`);
+            head += `<th class="py-1.5 px-2 bg-blue-50/60 text-blue-900">총합</th>`;
+
+            let body = '';
+            ordered.forEach((t, rank) => {
+                const T = teams[t];
+                const played = T.totalCount > 0;
+                let row = `<td class="py-2 px-2 text-left whitespace-nowrap">
+                    <span class="inline-block ${TEAM_COLORS[t] || 'bg-slate-100 text-slate-700'} font-bold px-1.5 py-0.5 rounded text-[11px]">${played && rank === 0 ? '👑 ' : ''}${t}</span>
+                    <span class="text-[10px] text-slate-500 ml-1">${T.members.join('·')}</span></td>`;
+                rounds.forEach(r => {
+                    const rr = T.rounds[r];
+                    row += rr
+                        ? `<td class="py-2 px-1"><div class="font-bold text-slate-800">${fmt(rr.gross)}</div><div class="text-[10px] text-blue-700">Net ${fmt(rr.net)}</div><div class="text-[9px] text-slate-400">${rr.count}/${T.members.length}명</div></td>`
+                        : `<td class="py-2 px-1 text-slate-300">-</td>`;
+                });
+                row += played
+                    ? `<td class="py-2 px-2 bg-blue-50/40"><div class="font-bold text-slate-900">${fmt(T.totalGross)}</div><div class="text-[10px] text-blue-700 font-bold">Net ${fmt(T.totalNet)}</div></td>`
+                    : `<td class="py-2 px-2 bg-blue-50/40 text-slate-300">-</td>`;
+                body += `<tr class="border-t border-slate-100">${row}</tr>`;
+            });
+
+            container.innerHTML += `
+                <div class="bg-emerald-50/50 p-3.5 rounded-xl border border-emerald-100 mt-2 space-y-2">
+                    <div class="font-bold text-emerald-900 text-xs flex items-center justify-between">
+                        <span>👥 조별 스코어 합산</span>
+                        <span class="text-[10px] text-slate-500 font-normal">Gross 합 / Net 합 · 입력된 선수만 집계</span>
+                    </div>
+                    <div class="overflow-x-auto custom-scrollbar">
+                        <table class="w-full text-center text-xs">
+                            <thead class="text-slate-600 font-bold text-[11px]"><tr>${head}</tr></thead>
+                            <tbody>${body}</tbody>
+                        </table>
+                    </div>
+                </div>`;
         }
 
         async function saveScores(explicit = false) {
@@ -1577,6 +1668,16 @@
                     });
                 }
             });
+
+            const teams = computeTeamTotals(rounds);
+            const teamNames = TEAMS.filter(t => teams[t] && teams[t].totalCount > 0).sort((a, b) => teams[a].totalNet - teams[b].totalNet);
+            if (teamNames.length > 0) {
+                text += `\n👥 조별 합산 (Gross / Net):\n`;
+                teamNames.forEach((t, i) => {
+                    const T = teams[t];
+                    text += `${i+1}위. ${t} (${T.members.join(',')}) - ${T.totalGross} / Net ${T.totalNet}\n`;
+                });
+            }
 
             text += `\n[자세히 보기]\n${window.location.href}`;
 
