@@ -1061,8 +1061,27 @@
             });
 
             const fmt = n => Number.isInteger(n) ? n : n.toFixed(1);
+
+            // 라운드별 누적(해당 라운드까지 합산) 계산 + 누적 Net 기준 라운드별 순위
+            const cum = {};   // cum[team][round] = { gross, net, count }
+            teamNames.forEach(t => {
+                let g = 0, n = 0, c = 0;
+                cum[t] = {};
+                rounds.forEach(r => {
+                    const rr = teams[t].rounds[r];
+                    if (rr) { g += rr.gross; n += rr.net; c += rr.count; }
+                    cum[t][r] = { gross: g, net: n, count: c, hasRound: !!rr };
+                });
+            });
+            const cumRank = {}; // cumRank[round][team] = 순위
+            rounds.forEach(r => {
+                const list = teamNames.filter(t => cum[t][r].count > 0).sort((a, b) => cum[a][r].net - cum[b][r].net);
+                cumRank[r] = {};
+                list.forEach((t, i) => { cumRank[r][t] = (i > 0 && cum[t][r].net === cum[list[i-1]][r].net) ? cumRank[r][list[i-1]] : i + 1; });
+            });
+
             let head = `<th class="py-1.5 px-2 text-left">조 (인원)</th>`;
-            rounds.forEach((r, i) => head += `<th class="py-1.5 px-1 whitespace-nowrap">${escapeHtml(roundNames[i])}</th>`);
+            rounds.forEach((r, i) => head += `<th class="py-1.5 px-1 whitespace-nowrap">${escapeHtml(roundNames[i])}<div class="text-[9px] text-slate-400 font-normal">라운드 / 누적</div></th>`);
             head += `<th class="py-1.5 px-2 bg-blue-50/60 text-blue-900">총합</th>`;
 
             let body = '';
@@ -1074,9 +1093,20 @@
                     <span class="text-[10px] text-slate-500 ml-1">${T.members.join('·')}</span></td>`;
                 rounds.forEach(r => {
                     const rr = T.rounds[r];
-                    row += rr
-                        ? `<td class="py-2 px-1"><div class="font-bold text-slate-800">${fmt(rr.gross)}</div><div class="text-[10px] text-blue-700">Net ${fmt(rr.net)}</div><div class="text-[9px] text-slate-400">${rr.count}/${T.members.length}명</div></td>`
-                        : `<td class="py-2 px-1 text-slate-300">-</td>`;
+                    const c = cum[t][r];
+                    if (!rr) { row += `<td class="py-2 px-1 text-slate-300">-</td>`; return; }
+                    const rk = cumRank[r][t];
+                    const rkBadge = rk ? `<span class="inline-block ${rk === 1 ? 'bg-amber-200 text-amber-900' : 'bg-slate-200 text-slate-600'} font-bold px-1 rounded text-[9px] ml-0.5">${rk}위</span>` : '';
+                    row += `<td class="py-2 px-1 align-top">
+                        ${rr
+                            ? `<div class="font-bold text-slate-800">${fmt(rr.gross)}</div><div class="text-[10px] text-blue-700">Net ${fmt(rr.net)}</div><div class="text-[9px] text-slate-400">${rr.count}/${T.members.length}명</div>`
+                            : `<div class="text-slate-300 text-[10px]">미입력</div>`}
+                        <div class="mt-1 pt-1 border-t border-dashed border-slate-200 bg-emerald-50 rounded px-1">
+                            <div class="text-[9px] text-emerald-700 font-semibold">누적${rkBadge}</div>
+                            <div class="text-[11px] font-bold text-emerald-900">${fmt(c.gross)}</div>
+                            <div class="text-[10px] text-emerald-700">Net ${fmt(c.net)}</div>
+                        </div>
+                    </td>`;
                 });
                 row += played
                     ? `<td class="py-2 px-2 bg-blue-50/40"><div class="font-bold text-slate-900">${fmt(T.totalGross)}</div><div class="text-[10px] text-blue-700 font-bold">Net ${fmt(T.totalNet)}</div></td>`
@@ -1088,7 +1118,7 @@
                 <div class="bg-emerald-50/50 p-3.5 rounded-xl border border-emerald-100 mt-2 space-y-2">
                     <div class="font-bold text-emerald-900 text-xs flex items-center justify-between">
                         <span>👥 조별 스코어 합산</span>
-                        <span class="text-[10px] text-slate-500 font-normal">Gross 합 / Net 합 · 입력된 선수만 집계</span>
+                        <span class="text-[10px] text-slate-500 font-normal">라운드 합 + 누적(해당 라운드까지) · 누적 Net 순위</span>
                     </div>
                     <div class="overflow-x-auto custom-scrollbar">
                         <table class="w-full text-center text-xs">
