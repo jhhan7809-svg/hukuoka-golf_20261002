@@ -516,7 +516,17 @@
                 </button>
             </div>
 
-            <textarea id="newNoteInput" rows="4" placeholder="준비물 체크리스트, 방문할 맛집, 기타 주의사항 등을 자유롭게 기재해 두세요..." class="w-full p-3 border border-slate-200 rounded-xl text-xs sm:text-sm leading-relaxed focus:outline-none focus:border-amber-500 resize-y bg-slate-50/50 min-h-[90px]"></textarea>
+            <textarea id="newNoteInput" rows="4" placeholder="준비물 체크리스트, 방문할 맛집, 기타 주의사항 등을 자유롭게 기재해 두세요... (웹주소는 자동 링크)" class="w-full p-3 border border-slate-200 rounded-xl text-xs sm:text-sm leading-relaxed focus:outline-none focus:border-amber-500 resize-y bg-slate-50/50 min-h-[90px]"></textarea>
+
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <label class="inline-flex items-center space-x-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-2 rounded-lg cursor-pointer transition">
+                    <i class="fa-solid fa-images text-blue-600"></i>
+                    <span>이미지 첨부 (여러 장 가능)</span>
+                    <input type="file" id="newNoteImagesInput" accept="image/*" multiple onchange="addPendingNoteImages(event)" class="hidden">
+                </label>
+                <span id="pendingNoteImagesCount" class="text-[11px] text-slate-500"></span>
+            </div>
+            <div id="pendingNoteImagesPreview" class="flex flex-wrap gap-2 empty:hidden"></div>
         </div>
 
         <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 space-y-3">
@@ -1495,13 +1505,52 @@
             } catch (e) { return false; }
         }
 
+        /* ---------------- 메모 이미지 첨부 ---------------- */
+        let pendingNoteImages = [];
+
+        async function addPendingNoteImages(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+            for (const file of Array.from(files)) {
+                try {
+                    pendingNoteImages.push(await compressImageFile(file, 1024, 0.7));
+                } catch (e) { console.error('이미지 로드 실패', e); }
+            }
+            event.target.value = '';
+            renderPendingNoteImages();
+            showToast(`${files.length}장 첨부 준비됨 (메모 추가 시 함께 저장)`, '🖼️');
+        }
+
+        function removePendingNoteImage(idx) {
+            pendingNoteImages.splice(idx, 1);
+            renderPendingNoteImages();
+        }
+
+        function renderPendingNoteImages() {
+            const box = document.getElementById('pendingNoteImagesPreview');
+            const cnt = document.getElementById('pendingNoteImagesCount');
+            if (!box) return;
+            box.innerHTML = pendingNoteImages.map((src, i) => `
+                <div class="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 group">
+                    <img src="${src}" class="w-full h-full object-cover cursor-pointer" onclick="openImageModal(pendingNoteImages[${i}], '첨부 예정 #${i+1}')">
+                    <button type="button" onclick="removePendingNoteImage(${i})" class="absolute top-0.5 right-0.5 bg-slate-900/80 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] hover:bg-rose-600 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+                </div>`).join('');
+            if (cnt) cnt.innerText = pendingNoteImages.length ? `첨부 ${pendingNoteImages.length}장` : '';
+        }
+
+        function openNoteImage(noteId, idx) {
+            const note = notesHistory.find(n => n.id == noteId);
+            const imgs = note ? toArray(note.images, []) : [];
+            if (imgs[idx]) openImageModal(imgs[idx], `메모 사진 #${idx + 1} (${note.date})`);
+        }
+
         function saveNewNote() {
             const input = document.getElementById('newNoteInput');
             if(!input) return;
 
             const content = input.value.trim();
-            if (!content) {
-                showToast('메모 내용을 입력해 주세요.', '⚠️');
+            if (!content && pendingNoteImages.length === 0) {
+                showToast('메모 내용 또는 이미지를 추가해 주세요.', '⚠️');
                 return;
             }
 
@@ -1511,15 +1560,18 @@
             const newNote = {
                 id: Date.now(),
                 content: content,
-                date: timeStr
+                date: timeStr,
+                images: [...pendingNoteImages]
             };
 
             notesHistory.unshift(newNote);
             input.value = '';
+            pendingNoteImages = [];
+            renderPendingNoteImages();
 
             renderNotesHistory();
             saveSettlementToFirebase();
-            showToast('새 메모가 누적 저장되었습니다!', '📝');
+            showToast(newNote.images.length ? `새 메모(사진 ${newNote.images.length}장)가 저장되었습니다!` : '새 메모가 누적 저장되었습니다!', '📝');
         }
 
         function deleteNote(id) {
@@ -1558,6 +1610,11 @@
             }
 
             filtered.forEach(note => {
+                const imgs = toArray(note.images, []);
+                const imagesHtml = imgs.length ? `
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        ${imgs.map((src, i) => `<img src="${src}" class="w-20 h-20 object-cover rounded-lg border border-slate-200 cursor-pointer hover:opacity-90" onclick="openNoteImage(${note.id}, ${i})">`).join('')}
+                    </div>` : '';
                 const card = document.createElement('div');
                 card.className = "p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2 relative group hover:border-amber-300 transition";
                 card.innerHTML = `
@@ -1572,7 +1629,8 @@
                             </button>
                         </div>
                     </div>
-                    <div class="text-slate-800 whitespace-pre-wrap leading-relaxed">${escapeHtml(note.content)}</div>
+                    ${note.content ? `<div class="text-slate-800 whitespace-pre-wrap leading-relaxed break-all">${linkify(escapeHtml(note.content))}</div>` : ''}
+                    ${imagesHtml}
                 `;
                 container.appendChild(card);
             });
@@ -1585,6 +1643,17 @@
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
+        }
+
+        // 이미 escapeHtml 된 텍스트 안의 http(s) 주소를 클릭 가능한 링크로 변환 (끝의 .,)!? 등 문장부호는 제외)
+        function linkify(escapedText) {
+            return escapedText.replace(/(https?:\/\/[^\s<]+)/g, (url) => {
+                let trail = '';
+                const m = url.match(/[.,!?;:)\]]+$/);
+                if (m) { trail = m[0]; url = url.slice(0, -trail.length); }
+                const href = url.replace(/&quot;/g, '').replace(/&#039;/g, '');
+                return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline font-semibold hover:text-blue-800" onclick="event.stopPropagation()">${url}</a>${trail}`;
+            });
         }
 
         function copySingleNote(id) {
@@ -1601,7 +1670,8 @@
 
             let text = `[2026 후쿠오카 여행 메모 모음]\n---------------------------\n\n`;
             notesHistory.forEach((n, i) => {
-                text += `${i + 1}. (${n.date})\n${n.content}\n\n`;
+                const imgCount = toArray(n.images, []).length;
+                text += `${i + 1}. (${n.date})${imgCount ? ` [사진 ${imgCount}장]` : ''}\n${n.content || ''}\n\n`;
             });
 
             copyToClipboard(text, '전체 메모가 클립보드에 복사되었습니다!');
