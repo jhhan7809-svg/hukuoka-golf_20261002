@@ -436,10 +436,11 @@
                         <input type="number" id="expenseAmount" placeholder="예: 240000" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm">
                     </div>
                     <div>
-                        <label class="block text-[11px] text-slate-600 font-semibold mb-1">결제한 사람</label>
+                        <label class="block text-[11px] text-slate-600 font-semibold mb-1">결제한 사람 <span class="text-slate-400 font-normal">(참여자와 별개, 직접 입력 가능)</span></label>
                         <select id="expensePayer" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 font-bold text-xs sm:text-sm">
                             <!-- Populated dynamically -->
                         </select>
+                        <input type="text" id="expensePayerCustom" placeholder="결제자 이름 직접 입력 (예: 대리결제 홍길동)" class="hidden mt-1 w-full px-2.5 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm">
                     </div>
                 </div>
                 <div class="bg-white border border-slate-200 rounded-lg p-2.5">
@@ -812,7 +813,7 @@
             }
             renderSettlementMembersInputs();
             updatePayerSelect();
-            if (data && firebaseReady) migrateLegacyExpenses();
+            if (data) migrateLegacyExpenses();   // 서버/로컬 데이터 수신 즉시 구버전 항목 명단 고정
             renderExpenses();
             renderNotesHistory();
         }
@@ -1245,6 +1246,16 @@
         function renderSettlementMembersInputs() {
             const container = document.getElementById('settlementMembersContainer');
             if(!container) return;
+
+            // 이름 입력 중(포커스가 이 영역 안)이면 DOM 을 다시 만들지 않고 값만 동기화 → 한글 조합/포커스 유지
+            const active = document.activeElement;
+            const editing = active && container.contains(active);
+            const existing = container.querySelectorAll('input[id^="member_name_"]').length;
+            if (editing && existing === settlementMembers.length) {
+                settlementMembers.forEach((name, idx) => updateInputValueIfUnfocused(`member_name_${idx}`, name));
+                return;
+            }
+
             container.innerHTML = '';
 
             settlementMembers.forEach((name, idx) => {
@@ -1252,7 +1263,7 @@
                 div.className = "flex items-center space-x-1";
                 div.innerHTML = `
                     <span class="text-[10px] font-bold text-slate-400 w-4">${idx+1}</span>
-                    <input type="text" id="member_name_${idx}" value="${escapeHtml(name)}" oninput="updateSettlementMemberNames()" placeholder="이름" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500">
+                    <input type="text" id="member_name_${idx}" value="${escapeHtml(name)}" oninput="updateSettlementMemberNames()" onblur="updateSettlementMemberNames(true)" placeholder="이름" class="w-full px-2 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs font-semibold focus:outline-none focus:bg-white focus:border-blue-500">
                 `;
                 container.appendChild(div);
             });
@@ -1278,18 +1289,22 @@
             saveSettlementToFirebase();
         }
 
-        function updateSettlementMemberNames() {
+        let memberSaveTimer = null;
+        function updateSettlementMemberNames(immediate = false) {
             settlementMembers.forEach((_, idx) => {
                 const val = document.getElementById(`member_name_${idx}`)?.value;
                 if(val !== undefined) settlementMembers[idx] = val.trim();
             });
             updatePayerSelect();
             renderExpenses();
-            saveSettlementToFirebase();
+            // 타이핑 중 글자마다 저장하지 않고, 입력이 멈춘 뒤(0.8초) 또는 칸을 벗어날 때 저장
+            clearTimeout(memberSaveTimer);
+            if (immediate) saveSettlementToFirebase();
+            else memberSaveTimer = setTimeout(saveSettlementToFirebase, 800);
         }
 
         function saveSettlementMembers() {
-            updateSettlementMemberNames();
+            updateSettlementMemberNames(true);
             showToast('정산 참가 인원 및 이름이 저장되었습니다!', '👥');
         }
 
@@ -1310,16 +1325,36 @@
                 opt.innerText = name;
                 select.appendChild(opt);
             });
+            const customOpt = document.createElement('option');
+            customOpt.value = '__custom__';
+            customOpt.innerText = '✏️ 직접 입력…';
+            select.appendChild(customOpt);
 
-            if(settlementMembers.includes(currentSelected)) {
+            if(settlementMembers.includes(currentSelected) || currentSelected === '__custom__') {
                 select.value = currentSelected;
             }
-            select.onchange = renderNewExpenseParticipants;
+            select.onchange = () => { togglePayerCustomInput(); renderNewExpenseParticipants(); };
+            togglePayerCustomInput();
 
             // 멤버 구성이 바뀌면 참여 인원 선택을 전체 선택으로 리셋
             const key = settlementMembers.join('|');
             if (key !== lastMembersKey) { lastMembersKey = key; newExpenseParticipants = null; }
             renderNewExpenseParticipants();
+        }
+
+        function togglePayerCustomInput() {
+            const select = document.getElementById('expensePayer');
+            const custom = document.getElementById('expensePayerCustom');
+            if (!select || !custom) return;
+            const on = select.value === '__custom__';
+            custom.classList.toggle('hidden', !on);
+            if (on && document.activeElement !== custom) custom.focus();
+        }
+        function getNewExpensePayer() {
+            const select = document.getElementById('expensePayer');
+            const custom = document.getElementById('expensePayerCustom');
+            if (!select) return '';
+            return select.value === '__custom__' ? (custom?.value || '').trim() : select.value;
         }
 
         function getNewExpenseParticipants() {
@@ -1342,7 +1377,7 @@
             const cnt = document.getElementById('newExpenseParticipantsCount');
             if (!box) return;
             const s = getNewExpenseParticipants();
-            const payer = document.getElementById('expensePayer')?.value;
+            const payer = getNewExpensePayer();
             box.innerHTML = settlementMembers.map((name, idx) => {
                 const on = s.has(name);
                 const cls = on
@@ -1364,12 +1399,16 @@
 
             const title = titleInput.value.trim();
             const amount = parseFloat(amountInput.value);
-            const payer = payerSelect.value;
+            const payer = getNewExpensePayer();
             const account = accountInput.value.trim();
             const participants = [...getNewExpenseParticipants()].filter(n => settlementMembers.includes(n));
 
             if (!title || isNaN(amount) || amount <= 0) {
                 showToast('항목명과 올바른 금액을 입력해 주세요.', '⚠️');
+                return;
+            }
+            if (!payer) {
+                showToast('결제한 사람을 선택하거나 직접 입력해 주세요.', '⚠️');
                 return;
             }
             if (participants.length === 0) {
@@ -1399,6 +1438,8 @@
             document.getElementById('expenseAmount').value = '';
             document.getElementById('expenseAccount').value = '';
             document.getElementById('expenseReceiptInput').value = '';
+            const custom = document.getElementById('expensePayerCustom');
+            if (custom) custom.value = '';
         }
 
         function deleteExpense(id) {
@@ -1431,14 +1472,16 @@
         function expParticipants(e) {
             const p = toArray(e.participants, null);
             if (p && p.length) return p;
+            // 명단이 없는 구버전 항목: 지금 시점의 멤버 이름으로 즉시 고정(객체에 기록) → 이후 멤버 변경과 무관
             const frozen = settlementMembers.filter(n => n);
-            return frozen.length ? frozen : [e.payer].filter(Boolean);
+            e.participants = frozen.length ? frozen : [e.payer].filter(Boolean);
+            return e.participants;
         }
         function migrateLegacyExpenses() {
             let changed = false;
             expenses.forEach(e => {
                 const p = toArray(e.participants, null);
-                if (!p || !p.length) { e.participants = expParticipants(e); changed = true; }
+                if (!p || !p.length) { expParticipants(e); changed = true; }
             });
             if (changed) saveSettlementToFirebase();
         }
@@ -1477,6 +1520,24 @@
             e.settled = expSettled(e).filter(n => n !== name);
             renderExpenses();
             saveSettlementToFirebase();
+        }
+
+        function setExpensePayer(id, name) {
+            const e = expenses.find(x => x.id === id);
+            if (!e) return;
+            if (name === '__custom__') {
+                const typed = prompt('결제자 이름을 직접 입력하세요 (대리 결제 등)', e.payer || '');
+                if (typed === null) { renderExpenses(); return; }
+                name = typed.trim();
+            }
+            if (!name || name === e.payer) { renderExpenses(); return; }
+            const prev = e.payer;
+            e.payer = name;
+            // 결제자는 참여자와 별개(자동 포함하지 않음). 참여자 중 결제자 본인이 있으면 자동 완료 처리되므로 수동 완료 기록만 정리
+            e.settled = expSettled(e).filter(n => n !== name);
+            renderExpenses();
+            saveSettlementToFirebase();
+            showToast(`결제자 변경: ${prev} → ${name}`, '💳');
         }
 
         function addExpenseParticipant(id, name) {
@@ -1574,9 +1635,17 @@
                             <span class="mr-1">참여 추가:</span>
                             ${addable.map(n => `<button type="button" onclick="event.stopPropagation(); addExpenseParticipant(${item.id}, ${q(n)})" class="px-2 py-0.5 rounded-full border border-dashed border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-700 font-semibold cursor-pointer">+ ${escapeHtml(n)}</button>`).join('')}
                         </div>` : '';
+                    // 결제자 변경: 이 항목 참여자 + 현재 멤버 중 선택
+                    const payerChoices = [...new Set([item.payer, ...parts, ...settlementMembers].filter(Boolean))];
+                    const payerSel = `<label class="inline-flex items-center gap-1 text-[10px] text-slate-600">💳 결제자
+                        <select onchange="setExpensePayer(${item.id}, this.value)" onclick="event.stopPropagation()" class="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[11px] font-bold text-blue-800 focus:outline-none focus:border-blue-500 cursor-pointer">
+                            ${payerChoices.map(n => `<option value="${escapeHtml(n)}" ${n === item.payer ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}
+                            <option value="__custom__">✏️ 직접 입력…</option>
+                        </select>${parts.includes(item.payer) ? '' : '<span class="text-[9px] text-amber-700 bg-amber-50 px-1 rounded">대리결제 · 미참여</span>'}</label>`;
                     detail = `
                         <div class="mt-3 pt-3 border-t border-dashed border-slate-200 space-y-1.5" onclick="event.stopPropagation()">
-                            <div class="flex items-center justify-between text-[10px] text-slate-500 px-1">
+                            <div class="flex items-center justify-between flex-wrap gap-1 text-[10px] text-slate-500 px-1">
+                                ${payerSel}
                                 <span>분담금 <b class="text-slate-700">${share.toLocaleString()}</b> × ${parts.length}명 (이 항목 전용 명단)</span>
                                 ${item.account ? `<span class="text-slate-500">입금계좌: <b class="text-slate-700">${escapeHtml(item.account)}</b></span>` : ''}
                             </div>
