@@ -528,6 +528,22 @@
                 <span>📋 정산 내역 카톡 복사</span>
             </button>
         </div>
+
+        <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <h3 class="text-slate-900 font-bold text-sm sm:text-base flex items-center">
+                    <i class="fa-solid fa-file-invoice-dollar text-emerald-600 mr-2"></i> 최종 결과 상세내역
+                </h3>
+                <button type="button" onclick="copySettlementDetailText()" class="text-xs bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-lg transition shadow-sm flex items-center space-x-1 cursor-pointer">
+                    <i class="fa-solid fa-copy"></i>
+                    <span>상세내역 복사</span>
+                </button>
+            </div>
+            <p class="text-[11px] sm:text-xs text-slate-500">사람별 결제액·부담액(계산 근거)·차액과 송금 지시를 자동으로 정리합니다. 지출·환율·완료 처리가 바뀌면 함께 갱신됩니다.</p>
+            <div id="settlementDetail" class="space-y-2 text-xs">
+                <!-- Populated dynamically -->
+            </div>
+        </div>
     </div>
 
     <!-- TAB 5: 메모 -->
@@ -1931,6 +1947,7 @@
             if (pb) pb.style.width = pct + '%';
 
             renderSettlementTransfers(stat);
+            renderSettlementDetail();
 
             const box = document.getElementById('settlementSummary');
             if (!box) return;
@@ -1969,6 +1986,110 @@
                     </thead>
                     <tbody>${rows}</tbody>
                 </table>`;
+        }
+
+        /* ---------------- 최종 결과 상세내역 (사람별 계산 근거) ---------------- */
+        // 반환: [{ name, paid, owed, net, remaining, lines: [{label, value, sub}] , sendTo:[], receiveFrom:[], done:[] }]
+        function buildSettlementDetail() {
+            const { stat } = computeSettlement();
+            const { transfers, bal } = computeTransfers(stat);
+            const names = settlementSummaryNames(stat);
+            const N = settlementMembers.filter(n => n).length;
+            const krwExact = e => expCurrency(e) === 'JPY' ? e.amount * jpyRate / 100 : e.amount;
+            const won = v => `${Math.round(v).toLocaleString()}원`;
+            const amt = e => fmtMoney(e.amount, expCurrency(e), false);
+
+            return names.map(name => {
+                const s = stat[name] || { paid: 0, owed: 0 };
+                const paidItems = expenses.filter(e => e.payer === name);
+                const owedItems = expenses.filter(e => expParticipants(e).includes(name));
+                const common = owedItems.filter(e => expParticipants(e).length >= N);
+                const special = owedItems.filter(e => expParticipants(e).length < N);
+
+                const paidLines = paidItems.map(e => ({ text: `${e.title} ${amt(e)}`, value: expCurrency(e) === 'JPY' ? `≈${won(krwExact(e))}` : '' }));
+                const owedLines = [];
+                if (common.length) {
+                    const sum = common.reduce((a, e) => a + krwExact(e) / expParticipants(e).length, 0);
+                    owedLines.push({ text: `전원 ${N}명 분담 ${common.length}건 × 1/${N}`, value: won(Math.floor(sum)) });
+                }
+                special.forEach(e => {
+                    const n = expParticipants(e).length;
+                    owedLines.push({ text: `${e.title} ${amt(e)} ÷ ${n}명 (결제 ${e.payer})`, value: won(krwExact(e) / n) });
+                });
+
+                const net = s.paid - s.owed;
+                // 완료 처리된 송금이 있을 때만 '남은 금액'을 별도로 표시 (없으면 차액과 동일 취급)
+                const remaining = transferPayments.length ? (bal[name] || 0) : net;
+                const sendTo = transfers.filter(t => t.from === name).map(t => ({ who: t.to, amount: t.amount }));
+                const receiveFrom = transfers.filter(t => t.to === name).map(t => ({ who: t.from, amount: t.amount }));
+                const done = transferPayments.filter(p => p.from === name || p.to === name);
+                return { name, paid: s.paid, owed: s.owed, net, remaining, paidLines, owedLines, sendTo, receiveFrom, done };
+            });
+        }
+
+        function renderSettlementDetail() {
+            const box = document.getElementById('settlementDetail');
+            if (!box) return;
+            if (!expenses.length) {
+                box.innerHTML = `<div class="text-[11px] text-slate-400 py-1">지출 항목을 추가하면 사람별 상세내역이 표시됩니다.</div>`;
+                return;
+            }
+            const fmt = n => n.toLocaleString();
+            box.innerHTML = buildSettlementDetail().map(d => {
+                const netCls = d.net > 0 ? 'text-emerald-700' : d.net < 0 ? 'text-rose-600' : 'text-slate-500';
+                const netLabel = d.net > 0 ? '받을 돈' : d.net < 0 ? '보낼 돈' : '정산 없음';
+                const row = (l) => `<div class="flex justify-between gap-2 text-[11px]"><span class="text-slate-600 min-w-0">· ${escapeHtml(l.text)}</span><span class="text-slate-800 font-semibold whitespace-nowrap">${escapeHtml(l.value)}</span></div>`;
+                const paidHtml = d.paidLines.length ? d.paidLines.map(row).join('') : `<div class="text-[11px] text-slate-400">· 결제한 항목 없음</div>`;
+                const owedHtml = d.owedLines.length ? d.owedLines.map(row).join('') : `<div class="text-[11px] text-slate-400">· 부담 항목 없음</div>`;
+                let action = '';
+                if (d.sendTo.length) action += d.sendTo.map(t => `<div class="text-[11px]"><span class="text-rose-600 font-bold">→ ${escapeHtml(t.who)}에게 ${fmt(t.amount)}원 송금</span></div>`).join('');
+                if (d.receiveFrom.length) action += d.receiveFrom.map(t => `<div class="text-[11px]"><span class="text-emerald-700 font-bold">← ${escapeHtml(t.who)}에게서 ${fmt(t.amount)}원 수령</span></div>`).join('');
+                if (!d.sendTo.length && !d.receiveFrom.length) action = `<div class="text-[11px] text-slate-500">✅ 남은 송금 없음</div>`;
+                const doneHtml = d.done.length ? `<div class="text-[10px] text-slate-400 pt-1">완료: ${d.done.map(p => `${escapeHtml(p.from)}→${escapeHtml(p.to)} ${fmt(Number(p.amount))}원`).join(', ')}</div>` : '';
+                return `
+                    <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-900 text-sm">${escapeHtml(d.name)}</span>
+                            <span class="font-bold ${netCls}">${netLabel} ${fmt(Math.abs(d.net))}원</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div class="bg-white rounded-lg border border-slate-100 p-2 space-y-0.5">
+                                <div class="flex justify-between text-[11px] font-bold text-slate-700 border-b border-slate-100 pb-1 mb-1"><span>💳 결제액</span><span>${fmt(d.paid)}원</span></div>
+                                ${paidHtml}
+                            </div>
+                            <div class="bg-white rounded-lg border border-slate-100 p-2 space-y-0.5">
+                                <div class="flex justify-between text-[11px] font-bold text-slate-700 border-b border-slate-100 pb-1 mb-1"><span>🧾 부담액</span><span>${fmt(d.owed)}원</span></div>
+                                ${owedHtml}
+                            </div>
+                        </div>
+                        <div class="text-[11px] text-slate-600">차액 = 결제액 ${fmt(d.paid)} − 부담액 ${fmt(d.owed)} = <b class="${netCls}">${d.net > 0 ? '+' : ''}${fmt(d.net)}원</b>${d.remaining !== d.net ? ` · 완료 처리 반영 후 남은 금액 <b>${d.remaining > 0 ? '+' : ''}${fmt(d.remaining)}원</b>` : ''}</div>
+                        <div class="pt-1 border-t border-dashed border-slate-200">${action}${doneHtml}</div>
+                    </div>`;
+            }).join('');
+        }
+
+        function buildSettlementDetailText() {
+            const t = computeTotals();
+            const N = settlementMembers.filter(n => n).length;
+            const fmt = n => n.toLocaleString();
+            let text = `[2026 후쿠오카 정산 최종 결과 상세]\n---------------------------\n`;
+            text += `총 지출 ${fmt(t.totalKRW)}원 (${totalsBreakdownText(t)}) · 환율 100엔=${jpyRate}원 · ${N}명\n`;
+            buildSettlementDetail().forEach(d => {
+                const netLabel = d.net > 0 ? '받을 돈' : d.net < 0 ? '보낼 돈' : '정산 없음';
+                text += `\n■ ${d.name} — ${netLabel} ${fmt(Math.abs(d.net))}원\n`;
+                text += `- 결제액 ${fmt(d.paid)}원${d.paidLines.length ? ': ' + d.paidLines.map(l => l.value ? `${l.text}(${l.value})` : l.text).join(', ') : ''}\n`;
+                text += `- 부담액 ${fmt(d.owed)}원\n`;
+                d.owedLines.forEach(l => { text += `   · ${l.text} = ${l.value}\n`; });
+                text += `- 차액 ${d.net > 0 ? '+' : ''}${fmt(d.net)}원${d.remaining !== d.net ? ` (완료 반영 후 ${d.remaining > 0 ? '+' : ''}${fmt(d.remaining)}원)` : ''}\n`;
+                d.sendTo.forEach(x => { text += `- 송금: ${x.who}에게 ${fmt(x.amount)}원\n`; });
+                d.receiveFrom.forEach(x => { text += `- 수령: ${x.who}에게서 ${fmt(x.amount)}원\n`; });
+                if (!d.sendTo.length && !d.receiveFrom.length) text += `- ✅ 남은 송금 없음\n`;
+            });
+            return text;
+        }
+        function copySettlementDetailText() {
+            if (!expenses.length) { showToast('복사할 지출 내역이 없습니다.', '⚠️'); return; }
+            copyToClipboard(buildSettlementDetailText(), '최종 결과 상세내역이 복사되었습니다!');
         }
 
         function copySettlementText() {
