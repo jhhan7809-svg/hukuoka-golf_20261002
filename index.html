@@ -1863,12 +1863,12 @@
         function markTransferPaid(from, to, amount) {
             amount = Math.round(Number(amount)) || 0;
             if (!from || !to || amount <= 0) return;
-            if (!confirm(`${from} → ${to} ${amount.toLocaleString()}원 송금을 완료 처리할까요?`)) return;
+            if (!confirm(`[송금 완료 처리]\n${from} → ${to} ${amount.toLocaleString()}원\n\n실제로 송금이 끝난 경우에만 확인을 누르세요.\n(잘못 눌렀다면 아래 '✅ 완료된 송금' 목록의 [취소] 버튼으로 되돌릴 수 있습니다.)`)) return;
             const now = new Date();
             const at = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             transferPayments.push({ id: Date.now(), from, to, amount, at });
             commitExpenses();
-            showToast(`${from} → ${to} ${amount.toLocaleString()}원 완료 ✓`, '✅');
+            showToast(`${from} → ${to} ${amount.toLocaleString()}원 완료 ✓ (잘못 눌렀다면 '완료된 송금'에서 [취소])`, '✅', 6000);
         }
         function undoTransferPayment(id) {
             const p = transferPayments.find(x => x.id === id);
@@ -1895,7 +1895,7 @@
                         <span class="font-bold text-slate-800 min-w-0"><span class="text-rose-600">${escapeHtml(tr.from)}</span> → <span class="text-emerald-700">${escapeHtml(tr.to)}</span>${accountOf(tr.to) ? `<span class="ml-1 text-[10px] text-slate-400 font-normal">${escapeHtml(accountOf(tr.to))}</span>` : ''}</span>
                         <span class="flex items-center gap-1.5 shrink-0">
                             <span class="font-bold text-blue-800 whitespace-nowrap">${tr.amount.toLocaleString()}원</span>
-                            <button type="button" onclick="markTransferPaid(${q(tr.from)}, ${q(tr.to)}, ${tr.amount})" class="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0.5 rounded-md shadow-sm cursor-pointer">완료</button>
+                            <button type="button" onclick="markTransferPaid(${q(tr.from)}, ${q(tr.to)}, ${tr.amount})" class="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0.5 rounded-md shadow-sm cursor-pointer" title="실제 송금을 마친 뒤에 누르세요">송금완료</button>
                         </span>
                     </div>`).join('');
                 html += `<div class="text-[10px] text-slate-400 pt-1">남은 송금 ${transfers.length}회${residual ? ` · 반올림 차이 ${Math.abs(residual).toLocaleString()}원은 최대 채권자에게 반영` : ''}</div>`;
@@ -1905,8 +1905,8 @@
                     <div class="text-[10px] font-semibold text-slate-500 mb-1">✅ 완료된 송금 (${transferPayments.length}건)</div>
                     ${transferPayments.map(p => `
                         <div class="flex items-center justify-between gap-2 px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-100 text-[11px] mb-1">
-                            <span class="text-slate-500 line-through min-w-0">${escapeHtml(p.from)} → ${escapeHtml(p.to)} <b>${Number(p.amount).toLocaleString()}원</b><span class="ml-1 text-[10px] no-underline">${escapeHtml(p.at || '')}</span></span>
-                            <button type="button" onclick="undoTransferPayment(${p.id})" class="text-[10px] text-slate-400 hover:text-rose-600 underline shrink-0 cursor-pointer">취소</button>
+                            <span class="text-slate-500 min-w-0"><span class="line-through">${escapeHtml(p.from)} → ${escapeHtml(p.to)} <b>${Number(p.amount).toLocaleString()}원</b></span><span class="ml-1 text-[10px]">${escapeHtml(p.at || '')}</span></span>
+                            <button type="button" onclick="undoTransferPayment(${p.id})" class="text-[10px] bg-white border border-rose-300 text-rose-600 hover:bg-rose-50 font-bold px-2 py-0.5 rounded-md shrink-0 cursor-pointer" title="완료 처리를 되돌립니다"><i class="fa-solid fa-rotate-left mr-0.5"></i>완료 취소</button>
                         </div>`).join('')}
                 </div>`;
             }
