@@ -43,7 +43,7 @@
                 <span class="text-2xl">⛳</span>
                 <div>
                     <h1 class="text-base sm:text-lg font-bold tracking-tight">2026 후쿠오카 골프 & 시티 투어</h1>
-                    <p class="text-xs text-slate-400">2026.10.02(금) - 10.05(월) | 3박 4일 <span class="text-slate-500">· v2.1</span></p>
+                    <p class="text-xs text-slate-400">2026.10.02(금) - 10.05(월) | 3박 4일 <span class="text-slate-500">· v2.2</span></p>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
@@ -432,15 +432,22 @@
                         <input type="text" id="expenseTitle" placeholder="예: 렌터카/유류비/저녁" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm">
                     </div>
                     <div>
-                        <label class="block text-[11px] text-slate-600 font-semibold mb-1">결제 금액 (원/엔)</label>
-                        <input type="number" id="expenseAmount" placeholder="예: 240000" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm">
+                        <label class="block text-[11px] text-slate-600 font-semibold mb-1">결제 금액 · 통화</label>
+                        <div class="flex gap-1">
+                            <input type="number" id="expenseAmount" placeholder="예: 24000" oninput="renderNewExpenseParticipants()" class="w-full min-w-0 px-2.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm">
+                            <select id="expenseCurrency" onchange="renderNewExpenseParticipants()" class="shrink-0 px-2 py-2 bg-white border border-slate-300 rounded-lg font-bold text-xs sm:text-sm focus:outline-none focus:border-blue-500">
+                                <option value="JPY" selected>엔 ¥</option>
+                                <option value="KRW">원 ₩</option>
+                            </select>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">숙소비·렌트비는 원화, 현지 결제는 엔화로 입력</p>
                     </div>
                     <div>
                         <label class="block text-[11px] text-slate-600 font-semibold mb-1">결제한 사람 <span class="text-slate-400 font-normal">(참여자와 별개, 직접 입력 가능)</span></label>
                         <select id="expensePayer" class="w-full px-2.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 font-bold text-xs sm:text-sm">
                             <!-- Populated dynamically -->
                         </select>
-                        <input type="text" id="expensePayerCustom" placeholder="결제자 이름 직접 입력 (예: 대리결제 홍길동)" class="hidden mt-1 w-full px-2.5 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm">
+                        <input type="text" id="expensePayerCustom" placeholder="결제자 이름 직접 입력 (예: 대리결제 홍길동)" oninput="renderNewExpenseParticipants()" class="hidden mt-1 w-full px-2.5 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:border-blue-500 text-xs sm:text-sm">
                     </div>
                 </div>
                 <div class="bg-white border border-slate-200 rounded-lg p-2.5">
@@ -481,9 +488,17 @@
             </div>
 
             <div class="bg-blue-50/70 p-4 rounded-xl border border-blue-100 text-xs space-y-3">
-                <div class="flex justify-between items-center font-bold text-blue-900 text-sm sm:text-base border-b border-blue-200/60 pb-2">
-                    <span>총 지출 합계 (누적)</span>
-                    <span id="totalExpenseDisplay" class="text-blue-700 text-base sm:text-lg">0 원</span>
+                <div class="border-b border-blue-200/60 pb-2 space-y-1">
+                    <div class="flex justify-between items-center font-bold text-blue-900 text-sm sm:text-base">
+                        <span>총 지출 합계 (원화 환산)</span>
+                        <span id="totalExpenseDisplay" class="text-blue-700 text-base sm:text-lg">0 원</span>
+                    </div>
+                    <div class="flex justify-between items-center flex-wrap gap-1 text-[11px] text-slate-600">
+                        <span id="totalExpenseBreakdown"></span>
+                        <label class="inline-flex items-center gap-1 font-semibold">환율 100엔 =
+                            <input type="number" id="jpyRate" value="851" min="1" step="0.1" onchange="updateJpyRate()" class="w-16 px-1.5 py-0.5 bg-white border border-blue-200 rounded text-center font-bold text-blue-800 focus:outline-none focus:border-blue-500">원
+                        </label>
+                    </div>
                 </div>
                 <div>
                     <div class="flex justify-between items-center text-[11px] font-semibold text-slate-600 mb-1">
@@ -492,6 +507,18 @@
                     </div>
                     <div class="w-full h-2.5 bg-white rounded-full border border-blue-100 overflow-hidden">
                         <div id="settleProgressBar" class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all" style="width:0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-[11px] font-semibold text-slate-600 mb-1.5">👤 개인별 정산 요약 <span class="text-slate-400 font-normal">(결제액 · 부담액 · 아직 받을 돈 / 보낼 돈, 원화 환산)</span></div>
+                    <div id="settlementSummary" class="overflow-x-auto custom-scrollbar">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+                <div>
+                    <div class="text-[11px] font-semibold text-slate-600 mb-1.5">💸 최종 송금표 <span class="text-slate-400 font-normal">(미정산분 상계 후 최소 횟수, 원화)</span></div>
+                    <div id="settlementTransfers" class="space-y-1">
+                        <!-- Populated dynamically -->
                     </div>
                 </div>
             </div>
@@ -629,7 +656,9 @@
         let expenses = [];
         let settlementMembers = [...players];
         let notesHistory = [];
-        let customPerPersonShare = null;
+        const DEFAULT_JPY_RATE = 851;        // 100엔당 원화
+        let jpyRate = DEFAULT_JPY_RATE;
+        let transferPayments = [];           // 송금표에서 '완료' 처리한 송금 기록 [{id, from, to, amount, at}]
 
         let isSettlementLoaded = false;
         let isScoreLoaded = false;
@@ -795,7 +824,8 @@
                 members: settlementMembers,
                 expenses: expenses,
                 notesHistory: notesHistory,
-                customPerPersonShare: customPerPersonShare,
+                jpyRate: jpyRate,
+                payments: transferPayments,
                 updatedAt: Date.now()
             };
         }
@@ -806,10 +836,13 @@
                 settlementMembers = toArray(data.members, [...players]);
                 expenses = toArray(data.expenses, []);
                 notesHistory = toArray(data.notesHistory, []);
+                jpyRate = (parseFloat(data.jpyRate) > 0) ? parseFloat(data.jpyRate) : DEFAULT_JPY_RATE;
+                transferPayments = toArray(data.payments, []);
                 const countInput = document.getElementById('settlementMemberCount');
                 if (countInput && document.activeElement !== countInput) {
                     countInput.value = settlementMembers.length;
                 }
+                updateInputValueIfUnfocused('jpyRate', jpyRate);
             }
             renderSettlementMembersInputs();
             updatePayerSelect();
@@ -884,6 +917,19 @@
                 (snap) => {
                     if (snap.exists()) {
                         const data = snap.val();
+                        // [복구 가드] 서버 지출 내역이 비었는데 이 기기(localStorage)에는 남아 있으면, 덮어쓰기 전에 복구 여부 확인
+                        if (!isSettlementLoaded && toArray(data.expenses, []).length === 0) {
+                            const local = loadLocal(LS_SETTLEMENT_KEY);
+                            const localExp = local ? toArray(local.expenses, []) : [];
+                            if (localExp.length > 0 && confirm(`서버의 지출 내역이 비어 있지만 이 기기에는 ${localExp.length}건이 남아 있습니다.\n이 기기의 지출 내역을 서버로 복구할까요?`)) {
+                                data.expenses = localExp;
+                                applySettlementData(data);
+                                isSettlementLoaded = true;
+                                saveSettlementToFirebase();
+                                showToast(`지출 ${localExp.length}건을 서버로 복구했습니다.`, '♻️', 6000);
+                                return;
+                            }
+                        }
                         applySettlementData(data);
                         saveLocal(LS_SETTLEMENT_KEY, data);
                     } else if (isSettlementLoaded) {
@@ -1285,8 +1331,7 @@
 
             renderSettlementMembersInputs();
             updatePayerSelect();
-            renderExpenses();
-            saveSettlementToFirebase();
+            commitExpenses();
         }
 
         let memberSaveTimer = null;
@@ -1386,19 +1431,20 @@
                 return `<button type="button" onclick="toggleNewExpenseParticipant(${idx})" class="px-2.5 py-1 rounded-full border text-[11px] font-bold transition cursor-pointer ${cls}">${on ? '✓ ' : ''}${escapeHtml(name)}${name === payer ? ' 💳' : ''}</button>`;
             }).join('');
             const amount = parseFloat(document.getElementById('expenseAmount')?.value);
-            const share = (!isNaN(amount) && amount > 0 && s.size > 0) ? ` · 1인 ${Math.round(amount / s.size).toLocaleString()}` : '';
+            const cur = document.getElementById('expenseCurrency')?.value || 'JPY';
+            const share = (!isNaN(amount) && amount > 0 && s.size > 0) ? ` · 1인 ${fmtMoney(Math.round(amount / s.size), cur)}` : '';
             if (cnt) cnt.innerText = `(${s.size}명${share})`;
         }
 
         async function addExpense() {
             const titleInput = document.getElementById('expenseTitle');
             const amountInput = document.getElementById('expenseAmount');
-            const payerSelect = document.getElementById('expensePayer');
             const accountInput = document.getElementById('expenseAccount');
             const receiptInput = document.getElementById('expenseReceiptInput');
 
             const title = titleInput.value.trim();
             const amount = parseFloat(amountInput.value);
+            const currency = document.getElementById('expenseCurrency')?.value === 'KRW' ? 'KRW' : 'JPY';
             const payer = getNewExpensePayer();
             const account = accountInput.value.trim();
             const participants = [...getNewExpenseParticipants()].filter(n => settlementMembers.includes(n));
@@ -1423,14 +1469,13 @@
             }
 
             const newId = Date.now();
-            expenses.push({ id: newId, title, amount, payer, account, receipt, participants, settled: [] });
+            expenses.push({ id: newId, title, amount, currency, payer, account, receipt, participants, settled: [] });
             resetExpenseInputs();
             newExpenseParticipants = null;
             renderNewExpenseParticipants();
             expandedExpenseId = newId;
-            renderExpenses();
-            saveSettlementToFirebase();
-            showToast(`지출 추가: ${participants.length}명 분담 (1인 ${Math.round(amount / participants.length).toLocaleString()})`, '💰');
+            commitExpenses();
+            showToast(`지출 추가: ${participants.length}명 분담 (1인 ${fmtMoney(Math.round(amount / participants.length), currency)})`, '💰');
         }
 
         function resetExpenseInputs() {
@@ -1443,12 +1488,11 @@
         }
 
         function deleteExpense(id) {
-            const item = expenses.find(e => e.id === id);
+            const item = findExpense(id);
             if (item && !confirm(`'${item.title}' 항목을 삭제할까요?`)) return;
             expenses = expenses.filter(item => item.id !== id);
             if (expandedExpenseId === id) expandedExpenseId = null;
-            renderExpenses();
-            saveSettlementToFirebase();
+            commitExpenses();
             showToast('지출 항목이 삭제되었습니다.', '🗑');
         }
 
@@ -1456,18 +1500,20 @@
             if(confirm('모든 지출 내역을 삭제하시겠습니까?')) {
                 expenses = [];
                 expandedExpenseId = null;
-                renderExpenses();
-                saveSettlementToFirebase();
+                commitExpenses();
                 showToast('모든 지출 항목이 삭제되었습니다.', '🗑');
             }
         }
 
         function openExpenseReceipt(id) {
-            const item = expenses.find(e => e.id === id);
+            const item = findExpense(id);
             if (item && item.receipt) openImageModal(item.receipt, `${item.title} 영수증`);
         }
 
         /* ---------------- 지출별 분담/정산 상태 헬퍼 ---------------- */
+        function findExpense(id) { return expenses.find(x => x.id === id); }
+        // 지출 변경 후 공통 후처리: 화면 갱신 + 저장
+        function commitExpenses() { renderExpenses(); saveSettlementToFirebase(); }
         // 참여 인원: 항목에 고정 저장된 명단. (구버전 데이터는 최초 1회 현재 멤버로 고정 저장 → 이후 멤버 변경과 무관)
         function expParticipants(e) {
             const p = toArray(e.participants, null);
@@ -1482,11 +1528,48 @@
             expenses.forEach(e => {
                 const p = toArray(e.participants, null);
                 if (!p || !p.length) { expParticipants(e); changed = true; }
+                if (!e.currency) { e.currency = expCurrency(e); changed = true; }
             });
             if (changed) saveSettlementToFirebase();
         }
         function expSettled(e) { return toArray(e.settled, []); }
+        // 1인 분담금: 해당 항목의 통화 기준
         function expShare(e) { return Math.round(e.amount / (expParticipants(e).length || 1)); }
+
+        /* ---------------- 통화/환율 ---------------- */
+        // 통화 미지정(구버전) 항목: 숙소비·렌트비는 원화, 나머지는 엔화로 간주
+        function expCurrency(e) {
+            if (e.currency === 'KRW' || e.currency === 'JPY') return e.currency;
+            return /숙소|호텔|렌트|렌터/.test(e.title || '') ? 'KRW' : 'JPY';
+        }
+        function toKRW(amount, currency) {
+            return currency === 'JPY' ? Math.round(amount * jpyRate / 100) : Math.round(amount);
+        }
+        function expShareKRW(e) { return toKRW(expShare(e), expCurrency(e)); }
+        // "12,000엔(≈102,120원)" / "240,000원"
+        function fmtMoney(amount, currency, withKRW = true) {
+            if (currency === 'JPY') {
+                const base = `${amount.toLocaleString()}엔`;
+                return withKRW ? `${base}(≈${toKRW(amount, 'JPY').toLocaleString()}원)` : base;
+            }
+            return `${amount.toLocaleString()}원`;
+        }
+        function updateJpyRate() {
+            const input = document.getElementById('jpyRate');
+            const v = parseFloat(input?.value);
+            jpyRate = (v > 0) ? v : DEFAULT_JPY_RATE;
+            if (input) input.value = jpyRate;
+            commitExpenses();
+            showToast(`환율 적용: 100엔 = ${jpyRate}원`, '💱');
+        }
+        // 지출 항목의 통화 토글 (원 ↔ 엔)
+        function setExpenseCurrency(id, currency) {
+            const e = findExpense(id);
+            if (!e || (currency !== 'KRW' && currency !== 'JPY') || expCurrency(e) === currency) return;
+            e.currency = currency;
+            commitExpenses();
+            showToast(`'${e.title}' 통화 변경 → ${currency === 'KRW' ? '원' : '엔'}`, '💱');
+        }
         // 결제자 본인 분담금은 자동 완료 처리
         function isSettled(e, name) { return name === e.payer || expSettled(e).includes(name); }
 
@@ -1496,7 +1579,7 @@
         }
 
         function toggleSettled(id, name) {
-            const e = expenses.find(x => x.id === id);
+            const e = findExpense(id);
             if (!e) return;
             if (name === e.payer) { showToast('결제자 본인 분담금은 자동으로 완료 처리됩니다.', 'ℹ️'); return; }
             if (!expParticipants(e).includes(name)) return;
@@ -1504,13 +1587,12 @@
             const was = s.includes(name);
             s = was ? s.filter(n => n !== name) : [...s, name];
             e.settled = s;
-            renderExpenses();
-            saveSettlementToFirebase();
+            commitExpenses();
             showToast(was ? `${name} 정산완료 해제` : `${name} 정산완료 ✓`, was ? '↩️' : '✅');
         }
 
         function removeExpenseParticipant(id, name) {
-            const e = expenses.find(x => x.id === id);
+            const e = findExpense(id);
             if (!e) return;
             const parts = expParticipants(e);
             if (!parts.includes(name)) return;
@@ -1518,12 +1600,11 @@
             if (!confirm(`'${name}' 을(를) '${e.title}' 항목에서 제외할까요?`)) return;
             e.participants = parts.filter(n => n !== name);
             e.settled = expSettled(e).filter(n => n !== name);
-            renderExpenses();
-            saveSettlementToFirebase();
+            commitExpenses();
         }
 
         function setExpensePayer(id, name) {
-            const e = expenses.find(x => x.id === id);
+            const e = findExpense(id);
             if (!e) return;
             if (name === '__custom__') {
                 const typed = prompt('결제자 이름을 직접 입력하세요 (대리 결제 등)', e.payer || '');
@@ -1535,19 +1616,17 @@
             e.payer = name;
             // 결제자는 참여자와 별개(자동 포함하지 않음). 참여자 중 결제자 본인이 있으면 자동 완료 처리되므로 수동 완료 기록만 정리
             e.settled = expSettled(e).filter(n => n !== name);
-            renderExpenses();
-            saveSettlementToFirebase();
+            commitExpenses();
             showToast(`결제자 변경: ${prev} → ${name}`, '💳');
         }
 
         function addExpenseParticipant(id, name) {
-            const e = expenses.find(x => x.id === id);
+            const e = findExpense(id);
             if (!e || !name) return;
             const parts = expParticipants(e);
             if (parts.includes(name)) return;
             e.participants = [...parts, name];
-            renderExpenses();
-            saveSettlementToFirebase();
+            commitExpenses();
         }
 
         // 개인별 집계: 결제액, 부담액, 아직 받을 돈/보낼 돈, 전체 진행률
@@ -1557,10 +1636,16 @@
             settlementMembers.forEach(ensure);
             let totalDue = 0, totalDone = 0;
 
+            // 통화가 섞여 있으므로 집계는 모두 원화 환산 기준.
+            // 항목마다 반올림하지 않고 소수점 그대로 누적한 뒤, 개인별 합계에서 한 번만 절사(floor)
+            // → 1인 부담액 = 총액 ÷ N 과 일치 (예: 2,763,206 ÷ 8 = 345,400)
+            const krwExact = e => expCurrency(e) === 'JPY' ? e.amount * jpyRate / 100 : e.amount;
+            const pairs = {};
             expenses.forEach(e => {
-                ensure(e.payer).paid += e.amount;
+                const amountKRW = krwExact(e);
+                ensure(e.payer).paid += amountKRW;
                 const parts = expParticipants(e);
-                const share = expShare(e);
+                const share = amountKRW / (parts.length || 1);
                 parts.forEach(p => {
                     ensure(p).owed += share;
                     if (p === e.payer) return;
@@ -1570,24 +1655,32 @@
                     } else {
                         stat[p].toSend += share; stat[p].pending++;
                         stat[e.payer].toReceive += share; stat[e.payer].pending++;
+                        // 직접 채무 행렬(누가 누구에게 얼마) → 송금표 매칭 우선순위에 사용
+                        (pairs[p] || (pairs[p] = {}))[e.payer] = (pairs[p][e.payer] || 0) + share;
                     }
                 });
             });
-            return { stat, totalDue, totalDone };
+            lastDirectPairs = pairs;
+            Object.values(stat).forEach(s => {
+                s.paid = Math.round(s.paid);
+                s.owed = Math.floor(s.owed);
+                s.toSend = Math.floor(s.toSend);
+                s.toReceive = Math.floor(s.toReceive);
+            });
+            return { stat, totalDue: Math.floor(totalDue), totalDone: Math.floor(totalDone) };
         }
 
+        /* ---------------- 지출 목록 렌더 ---------------- */
         function renderExpenses() {
             const listEl = document.getElementById('expenseList');
-            const totalDisplay = document.getElementById('totalExpenseDisplay');
             if(!listEl) return;
 
             listEl.innerHTML = '';
-            let totalAmount = 0;
 
             expenses.forEach((item, idx) => {
-                totalAmount += item.amount;
                 const parts = expParticipants(item);
                 const share = expShare(item);
+                const cur = expCurrency(item);
                 const others = parts.filter(p => p !== item.payer);
                 const doneCnt = others.filter(p => expSettled(item).includes(p)).length;
                 const allDone = others.length > 0 && doneCnt === others.length;
@@ -1598,61 +1691,17 @@
                         <i class="fa-solid fa-receipt mr-0.5"></i>영수증
                     </button>` : '';
 
+                const curPill = cur === 'KRW'
+                    ? `<span class="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-1.5 py-0.5 rounded">₩ 원화</span>`
+                    : `<span class="text-[10px] bg-rose-100 text-rose-800 font-bold px-1.5 py-0.5 rounded">¥ 엔화</span>`;
+
                 const statusPill = others.length === 0
                     ? `<span class="text-[10px] bg-slate-100 text-slate-500 font-bold px-2 py-0.5 rounded-full">본인 부담</span>`
                     : allDone
                         ? `<span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">✅ 정산 완료</span>`
                         : `<span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full">정산 ${doneCnt}/${others.length}</span>`;
 
-                // 펼침 영역: 이 항목에 고정 저장된 참여자 명단 기준 (현재 참가인원 설정과 독립)
-                let detail = '';
-                if (expanded) {
-                    const q = s => JSON.stringify(s).replace(/"/g, '&quot;');
-                    const rows = parts.map(m => {
-                        const isPayer = m === item.payer;
-                        const settled = isSettled(item, m);
-                        const rowCls = settled ? 'bg-slate-100/80' : 'bg-white';
-                        const nameCls = settled && !isPayer ? 'line-through text-slate-400' : 'text-slate-800';
-                        const removeBtn = `<button type="button" onclick="event.stopPropagation(); removeExpenseParticipant(${item.id}, ${q(m)})" title="이 항목에서 제외" class="w-5 h-5 rounded-full border border-slate-200 bg-white text-slate-300 hover:text-rose-600 hover:border-rose-300 flex items-center justify-center text-[10px] shrink-0 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>`;
-                        let action;
-                        if (isPayer) action = `<span class="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-1 rounded-lg">💳 결제자 (본인부담)</span>`;
-                        else if (settled) action = `<button type="button" onclick="event.stopPropagation(); toggleSettled(${item.id}, ${q(m)})" class="text-[10px] bg-slate-200 text-slate-500 font-bold px-2.5 py-1 rounded-lg hover:bg-slate-300 cursor-pointer"><i class="fa-solid fa-check mr-1"></i>완료됨 (해제)</button>`;
-                        else action = `<button type="button" onclick="event.stopPropagation(); toggleSettled(${item.id}, ${q(m)})" class="text-[10px] bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-lg hover:bg-emerald-700 shadow-sm cursor-pointer">정산완료 처리</button>`;
-                        return `
-                            <div class="flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg border border-slate-100 ${rowCls}">
-                                <div class="flex items-center gap-2 min-w-0">
-                                    ${removeBtn}
-                                    <span class="font-bold text-xs truncate ${nameCls}">${escapeHtml(m)}</span>
-                                    <span class="text-[11px] font-bold ${settled ? 'text-slate-400 line-through' : 'text-blue-700'}">${share.toLocaleString()}</span>
-                                </div>
-                                ${action}
-                            </div>`;
-                    }).join('');
-                    // 현재 참가인원 중 이 항목에 없는 사람은 '추가' 칩으로만 노출 (기존 명단은 건드리지 않음)
-                    const addable = settlementMembers.filter(n => n && !parts.includes(n));
-                    const addRow = addable.length ? `
-                        <div class="flex items-center flex-wrap gap-1 pt-1 text-[10px] text-slate-500">
-                            <span class="mr-1">참여 추가:</span>
-                            ${addable.map(n => `<button type="button" onclick="event.stopPropagation(); addExpenseParticipant(${item.id}, ${q(n)})" class="px-2 py-0.5 rounded-full border border-dashed border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-700 font-semibold cursor-pointer">+ ${escapeHtml(n)}</button>`).join('')}
-                        </div>` : '';
-                    // 결제자 변경: 이 항목 참여자 + 현재 멤버 중 선택
-                    const payerChoices = [...new Set([item.payer, ...parts, ...settlementMembers].filter(Boolean))];
-                    const payerSel = `<label class="inline-flex items-center gap-1 text-[10px] text-slate-600">💳 결제자
-                        <select onchange="setExpensePayer(${item.id}, this.value)" onclick="event.stopPropagation()" class="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[11px] font-bold text-blue-800 focus:outline-none focus:border-blue-500 cursor-pointer">
-                            ${payerChoices.map(n => `<option value="${escapeHtml(n)}" ${n === item.payer ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}
-                            <option value="__custom__">✏️ 직접 입력…</option>
-                        </select>${parts.includes(item.payer) ? '' : '<span class="text-[9px] text-amber-700 bg-amber-50 px-1 rounded">대리결제 · 미참여</span>'}</label>`;
-                    detail = `
-                        <div class="mt-3 pt-3 border-t border-dashed border-slate-200 space-y-1.5" onclick="event.stopPropagation()">
-                            <div class="flex items-center justify-between flex-wrap gap-1 text-[10px] text-slate-500 px-1">
-                                ${payerSel}
-                                <span>분담금 <b class="text-slate-700">${share.toLocaleString()}</b> × ${parts.length}명 (이 항목 전용 명단)</span>
-                                ${item.account ? `<span class="text-slate-500">입금계좌: <b class="text-slate-700">${escapeHtml(item.account)}</b></span>` : ''}
-                            </div>
-                            ${rows}
-                            ${addRow}
-                        </div>`;
-                }
+                const detail = expanded ? renderExpenseDetail(item, parts, share, cur) : '';
 
                 const div = document.createElement('div');
                 div.className = `rounded-xl border p-3 transition cursor-pointer ${allDone ? 'bg-slate-50/70 border-slate-200' : expanded ? 'bg-white border-blue-300 shadow-md' : 'bg-slate-50 border-slate-200 hover:border-blue-300'}`;
@@ -1662,13 +1711,14 @@
                         <div class="space-y-1 min-w-0">
                             <div class="font-bold text-xs sm:text-sm flex items-center gap-1.5 flex-wrap ${allDone ? 'text-slate-500' : 'text-slate-900'}">
                                 <span class="${allDone ? 'line-through decoration-slate-400' : ''}">${idx+1}. ${escapeHtml(item.title)}</span>
+                                ${curPill}
                                 ${receiptBtn}
                                 ${statusPill}
                             </div>
                             <div class="text-[11px] text-slate-500">
                                 결제 <strong class="text-slate-800">${escapeHtml(item.payer || '')}</strong>
-                                · <strong class="text-blue-700">${item.amount.toLocaleString()}</strong>원/엔
-                                · <span class="text-slate-700 font-semibold">${parts.length}명</span> 분담 (1인 <b class="text-slate-700">${share.toLocaleString()}</b>)
+                                · <strong class="text-blue-700">${fmtMoney(item.amount, cur)}</strong>
+                                · <span class="text-slate-700 font-semibold">${parts.length}명</span> 분담 (1인 <b class="text-slate-700">${fmtMoney(share, cur, false)}</b>)
                             </div>
                         </div>
                         <div class="flex items-center gap-1 shrink-0">
@@ -1687,34 +1737,281 @@
                 listEl.innerHTML = `<div class="text-center py-4 text-slate-400 text-xs">등록된 지출 항목이 없습니다.</div>`;
             }
 
-            if(totalDisplay) totalDisplay.innerText = totalAmount.toLocaleString() + ' 원/엔';
+            renderSettlementSummary();
+        }
 
-            // 전체 정산 진행률
-            const { totalDue, totalDone } = computeSettlement();
-            const pct = totalDue > 0 ? Math.round(totalDone / totalDue * 100) : 0;
+        // 펼침 영역: 이 항목에 고정 저장된 참여자 명단 기준 (현재 참가인원 설정과 독립)
+        function renderExpenseDetail(item, parts, share, cur) {
+            const q = s => JSON.stringify(s).replace(/"/g, '&quot;');
+            const rows = parts.map(m => {
+                const isPayer = m === item.payer;
+                const settled = isSettled(item, m);
+                const rowCls = settled ? 'bg-slate-100/80' : 'bg-white';
+                const nameCls = settled && !isPayer ? 'line-through text-slate-400' : 'text-slate-800';
+                const removeBtn = `<button type="button" onclick="event.stopPropagation(); removeExpenseParticipant(${item.id}, ${q(m)})" title="이 항목에서 제외" class="w-5 h-5 rounded-full border border-slate-200 bg-white text-slate-300 hover:text-rose-600 hover:border-rose-300 flex items-center justify-center text-[10px] shrink-0 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>`;
+                let action;
+                if (isPayer) action = `<span class="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-1 rounded-lg">💳 결제자 (본인부담)</span>`;
+                else if (settled) action = `<button type="button" onclick="event.stopPropagation(); toggleSettled(${item.id}, ${q(m)})" class="text-[10px] bg-slate-200 text-slate-500 font-bold px-2.5 py-1 rounded-lg hover:bg-slate-300 cursor-pointer"><i class="fa-solid fa-check mr-1"></i>완료됨 (해제)</button>`;
+                else action = `<button type="button" onclick="event.stopPropagation(); toggleSettled(${item.id}, ${q(m)})" class="text-[10px] bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-lg hover:bg-emerald-700 shadow-sm cursor-pointer">정산완료 처리</button>`;
+                return `
+                    <div class="flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg border border-slate-100 ${rowCls}">
+                        <div class="flex items-center gap-2 min-w-0">
+                            ${removeBtn}
+                            <span class="font-bold text-xs truncate ${nameCls}">${escapeHtml(m)}</span>
+                            <span class="text-[11px] font-bold ${settled ? 'text-slate-400 line-through' : 'text-blue-700'}">${fmtMoney(share, cur)}</span>
+                        </div>
+                        ${action}
+                    </div>`;
+            }).join('');
+
+            // 현재 참가인원 중 이 항목에 없는 사람은 '추가' 칩으로만 노출 (기존 명단은 건드리지 않음)
+            const addable = settlementMembers.filter(n => n && !parts.includes(n));
+            const addRow = addable.length ? `
+                <div class="flex items-center flex-wrap gap-1 pt-1 text-[10px] text-slate-500">
+                    <span class="mr-1">참여 추가:</span>
+                    ${addable.map(n => `<button type="button" onclick="event.stopPropagation(); addExpenseParticipant(${item.id}, ${q(n)})" class="px-2 py-0.5 rounded-full border border-dashed border-slate-300 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-700 font-semibold cursor-pointer">+ ${escapeHtml(n)}</button>`).join('')}
+                </div>` : '';
+
+            // 결제자 변경: 이 항목 참여자 + 현재 멤버 중 선택
+            const payerChoices = [...new Set([item.payer, ...parts, ...settlementMembers].filter(Boolean))];
+            const payerSel = `<label class="inline-flex items-center gap-1 text-[10px] text-slate-600">💳 결제자
+                <select onchange="setExpensePayer(${item.id}, this.value)" onclick="event.stopPropagation()" class="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[11px] font-bold text-blue-800 focus:outline-none focus:border-blue-500 cursor-pointer">
+                    ${payerChoices.map(n => `<option value="${escapeHtml(n)}" ${n === item.payer ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}
+                    <option value="__custom__">✏️ 직접 입력…</option>
+                </select>${parts.includes(item.payer) ? '' : '<span class="text-[9px] text-amber-700 bg-amber-50 px-1 rounded">대리결제 · 미참여</span>'}</label>`;
+
+            // 통화 변경
+            const curSel = `<label class="inline-flex items-center gap-1 text-[10px] text-slate-600">💱 통화
+                <select onchange="setExpenseCurrency(${item.id}, this.value)" onclick="event.stopPropagation()" class="px-1.5 py-0.5 bg-white border border-slate-300 rounded text-[11px] font-bold text-blue-800 focus:outline-none focus:border-blue-500 cursor-pointer">
+                    <option value="JPY" ${cur === 'JPY' ? 'selected' : ''}>엔 ¥</option>
+                    <option value="KRW" ${cur === 'KRW' ? 'selected' : ''}>원 ₩</option>
+                </select></label>`;
+
+            return `
+                <div class="mt-3 pt-3 border-t border-dashed border-slate-200 space-y-1.5" onclick="event.stopPropagation()">
+                    <div class="flex items-center justify-between flex-wrap gap-1 text-[10px] text-slate-500 px-1">
+                        <span class="inline-flex items-center gap-2">${payerSel}${curSel}</span>
+                        <span>분담금 <b class="text-slate-700">${fmtMoney(share, cur, false)}</b> × ${parts.length}명 (이 항목 전용 명단)</span>
+                        ${item.account ? `<span class="text-slate-500">입금계좌: <b class="text-slate-700">${escapeHtml(item.account)}</b></span>` : ''}
+                    </div>
+                    ${rows}
+                    ${addRow}
+                </div>`;
+        }
+
+        /* ---------------- 정산 집계 표시: 총액 · 진행률 · 개인별 요약 ---------------- */
+        // 통화별 합계 + 원화 환산 총액
+        function computeTotals() {
+            let krw = 0, jpy = 0;
+            expenses.forEach(e => { if (expCurrency(e) === 'JPY') jpy += e.amount; else krw += e.amount; });
+            return { krw, jpy, totalKRW: krw + toKRW(jpy, 'JPY') };
+        }
+        function totalsBreakdownText(t) {
+            const parts = [];
+            if (t.krw) parts.push(`원화 ${t.krw.toLocaleString()}원`);
+            if (t.jpy) parts.push(`엔화 ${fmtMoney(t.jpy, 'JPY')}`);
+            return parts.join(' + ');
+        }
+        // 요약 표시 순서: 현재 멤버(이름 있는 사람) → 멤버가 아닌 결제자(대리결제 등)
+        function settlementSummaryNames(stat) {
+            const members = settlementMembers.filter(n => n);
+            const extras = Object.keys(stat).filter(n => n && !members.includes(n));
+            return [...members, ...extras];
+        }
+
+        // 최소 송금표: 각자 (받을 돈 - 보낼 돈) 순잔액을 구해 채무자(큰 금액부터)가 채권자에게 송금하도록 매칭.
+        // 채권자 선택은 '그 채무자에게 직접 받을 돈이 가장 많은 사람' 우선 (예: 현주 골프비는 종희에게) → 동률이면 잔액 큰 순.
+        // 항목별 반올림으로 생기는 몇십 원 차이는 가장 큰 채권자에게 흡수
+        let lastDirectPairs = {};
+        function computeTransfers(stat) {
+            const bal = {};
+            Object.keys(stat).forEach(n => { if (n) bal[n] = stat[n].toReceive - stat[n].toSend; });
+            const residual = Object.values(bal).reduce((a, b) => a + b, 0);
+            if (residual !== 0) {
+                const top = Object.keys(bal).sort((a, b) => bal[b] - bal[a])[0];
+                if (top !== undefined) bal[top] -= residual;
+            }
+            // 송금표에서 완료 처리된 송금 반영: 보낸 사람 잔액 ↑, 받은 사람 잔액 ↓
+            let paidSum = 0;
+            transferPayments.forEach(p => {
+                const amt = Number(p.amount) || 0;
+                if (!p.from || !p.to || amt <= 0) return;
+                bal[p.from] = (bal[p.from] || 0) + amt;
+                bal[p.to] = (bal[p.to] || 0) - amt;
+                paidSum += amt;
+            });
+            const creditors = Object.keys(bal).filter(n => bal[n] > 0).map(n => ({ n, v: bal[n] })).sort((a, b) => b.v - a.v);
+            const debtors = Object.keys(bal).filter(n => bal[n] < 0).map(n => ({ n, v: -bal[n] })).sort((a, b) => b.v - a.v);
+            const direct = (d, c) => (lastDirectPairs[d] && lastDirectPairs[d][c]) || 0;
+            const out = [];
+            for (const d of debtors) {
+                let guard = 0;
+                while (d.v > 0 && guard++ < 100) {
+                    const open = creditors.filter(c => c.v > 0);
+                    if (!open.length) break;
+                    open.sort((a, b) => (direct(d.n, b.n) - direct(d.n, a.n)) || (b.v - a.v));
+                    const c = open[0];
+                    const amt = Math.min(d.v, c.v);
+                    const prev = out.find(x => x.from === d.n && x.to === c.n);
+                    if (prev) prev.amount += amt; else out.push({ from: d.n, to: c.n, amount: amt });
+                    d.v -= amt; c.v -= amt;
+                }
+            }
+            return { transfers: out, residual, bal, paidSum };
+        }
+
+        function markTransferPaid(from, to, amount) {
+            amount = Math.round(Number(amount)) || 0;
+            if (!from || !to || amount <= 0) return;
+            if (!confirm(`${from} → ${to} ${amount.toLocaleString()}원 송금을 완료 처리할까요?`)) return;
+            const now = new Date();
+            const at = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            transferPayments.push({ id: Date.now(), from, to, amount, at });
+            commitExpenses();
+            showToast(`${from} → ${to} ${amount.toLocaleString()}원 완료 ✓`, '✅');
+        }
+        function undoTransferPayment(id) {
+            const p = transferPayments.find(x => x.id === id);
+            if (!p) return;
+            if (!confirm(`${p.from} → ${p.to} ${Number(p.amount).toLocaleString()}원 완료 처리를 취소할까요?`)) return;
+            transferPayments = transferPayments.filter(x => x.id !== id);
+            commitExpenses();
+            showToast('송금 완료 처리를 취소했습니다.', '↩️');
+        }
+
+        function renderSettlementTransfers(stat) {
+            const box = document.getElementById('settlementTransfers');
+            if (!box) return;
+            const { transfers, residual } = computeTransfers(stat);
+            const q = s => JSON.stringify(String(s)).replace(/"/g, '&quot;');
+            const accountOf = n => { const e = [...expenses].reverse().find(x => x.payer === n && x.account); return e ? e.account : ''; };
+
+            let html = '';
+            if (!transfers.length) {
+                html += `<div class="text-[11px] text-slate-400 py-1">${expenses.length ? '✅ 남은 송금이 없습니다. 정산 완료!' : '지출 항목을 추가하면 송금표가 표시됩니다.'}</div>`;
+            } else {
+                html += transfers.map(tr => `
+                    <div class="flex items-center justify-between gap-2 px-2.5 py-1.5 bg-white rounded-lg border border-blue-100 text-[11px]">
+                        <span class="font-bold text-slate-800 min-w-0"><span class="text-rose-600">${escapeHtml(tr.from)}</span> → <span class="text-emerald-700">${escapeHtml(tr.to)}</span>${accountOf(tr.to) ? `<span class="ml-1 text-[10px] text-slate-400 font-normal">${escapeHtml(accountOf(tr.to))}</span>` : ''}</span>
+                        <span class="flex items-center gap-1.5 shrink-0">
+                            <span class="font-bold text-blue-800 whitespace-nowrap">${tr.amount.toLocaleString()}원</span>
+                            <button type="button" onclick="markTransferPaid(${q(tr.from)}, ${q(tr.to)}, ${tr.amount})" class="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0.5 rounded-md shadow-sm cursor-pointer">완료</button>
+                        </span>
+                    </div>`).join('');
+                html += `<div class="text-[10px] text-slate-400 pt-1">남은 송금 ${transfers.length}회${residual ? ` · 반올림 차이 ${Math.abs(residual).toLocaleString()}원은 최대 채권자에게 반영` : ''}</div>`;
+            }
+            if (transferPayments.length) {
+                html += `<div class="pt-2 mt-1 border-t border-dashed border-blue-100">
+                    <div class="text-[10px] font-semibold text-slate-500 mb-1">✅ 완료된 송금 (${transferPayments.length}건)</div>
+                    ${transferPayments.map(p => `
+                        <div class="flex items-center justify-between gap-2 px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-100 text-[11px] mb-1">
+                            <span class="text-slate-500 line-through min-w-0">${escapeHtml(p.from)} → ${escapeHtml(p.to)} <b>${Number(p.amount).toLocaleString()}원</b><span class="ml-1 text-[10px] no-underline">${escapeHtml(p.at || '')}</span></span>
+                            <button type="button" onclick="undoTransferPayment(${p.id})" class="text-[10px] text-slate-400 hover:text-rose-600 underline shrink-0 cursor-pointer">취소</button>
+                        </div>`).join('')}
+                </div>`;
+            }
+            box.innerHTML = html;
+        }
+
+        function renderSettlementSummary() {
+            const t = computeTotals();
+            const totalDisplay = document.getElementById('totalExpenseDisplay');
+            if (totalDisplay) totalDisplay.innerText = t.totalKRW.toLocaleString() + ' 원';
+            const bd = document.getElementById('totalExpenseBreakdown');
+            if (bd) bd.innerText = totalsBreakdownText(t);
+
+            const { stat, totalDue, totalDone } = computeSettlement();
+            const tr = computeTransfers(stat);
+            // 진행률 = (항목별 정산완료 + 송금표 완료 처리) / 전체 미정산 대상
+            const done = Math.min(totalDue, totalDone + tr.paidSum);
+            const pct = totalDue > 0 ? Math.round(done / totalDue * 100) : 0;
             const pt = document.getElementById('settleProgressText');
             const pb = document.getElementById('settleProgressBar');
-            if (pt) pt.innerText = `${totalDone.toLocaleString()} / ${totalDue.toLocaleString()} (${pct}%)`;
+            if (pt) pt.innerText = `${done.toLocaleString()} / ${totalDue.toLocaleString()}원 (${pct}%)`;
             if (pb) pb.style.width = pct + '%';
+
+            renderSettlementTransfers(stat);
+
+            const box = document.getElementById('settlementSummary');
+            if (!box) return;
+            const names = settlementSummaryNames(stat);
+            if (!expenses.length || !names.length) {
+                box.innerHTML = `<div class="text-[11px] text-slate-400 py-1">지출 항목을 추가하면 개인별 요약이 표시됩니다.</div>`;
+                return;
+            }
+            const fmt = n => n.toLocaleString();
+            const rows = names.map(n => {
+                const s = stat[n];
+                const net = s.paid - s.owed;   // + 받을 돈(최종), - 보낼 돈(최종)
+                const netCls = net > 0 ? 'text-emerald-700' : net < 0 ? 'text-rose-600' : 'text-slate-400';
+                // 미정산(순액): 받을 돈 - 보낼 돈 - 완료된 송금 반영 후 남은 금액
+                const rem = tr.bal[n] || 0;
+                const pendingCls = rem !== 0 ? 'text-amber-700 font-bold' : 'text-slate-400';
+                const pendingTxt = rem > 0 ? `받을 ${fmt(rem)}` : rem < 0 ? `보낼 ${fmt(-rem)}` : '✅';
+                return `<tr class="border-t border-blue-100/60">
+                    <td class="py-1.5 px-2 text-left font-bold text-slate-800 whitespace-nowrap">${escapeHtml(n)}${settlementMembers.includes(n) ? '' : ' <span class="text-[9px] text-amber-700 bg-amber-50 px-1 rounded">외부</span>'}</td>
+                    <td class="py-1.5 px-2 text-right text-slate-700">${fmt(s.paid)}</td>
+                    <td class="py-1.5 px-2 text-right text-slate-700">${fmt(s.owed)}</td>
+                    <td class="py-1.5 px-2 text-right font-bold ${netCls}">${net > 0 ? '+' : ''}${fmt(net)}</td>
+                    <td class="py-1.5 px-2 text-right whitespace-nowrap ${pendingCls}">${pendingTxt}</td>
+                </tr>`;
+            }).join('');
+            box.innerHTML = `
+                <table class="w-full text-[11px] text-center">
+                    <thead class="text-slate-500 font-semibold">
+                        <tr>
+                            <th class="py-1 px-2 text-left">이름</th>
+                            <th class="py-1 px-2 text-right">결제액</th>
+                            <th class="py-1 px-2 text-right">부담액</th>
+                            <th class="py-1 px-2 text-right">차액</th>
+                            <th class="py-1 px-2 text-right">남은 정산</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
         }
 
         function copySettlementText() {
-            const totalAmount = expenses.reduce((sum, item) => sum + item.amount, 0);
-            const { totalDue, totalDone } = computeSettlement();
-            const pct = totalDue > 0 ? Math.round(totalDone / totalDue * 100) : 0;
+            const t = computeTotals();
+            const { stat, totalDue, totalDone } = computeSettlement();
+            const { transfers, bal, paidSum } = computeTransfers(stat);
+            const done = Math.min(totalDue, totalDone + paidSum);
+            const pct = totalDue > 0 ? Math.round(done / totalDue * 100) : 0;
 
             let text = `[2026 후쿠오카 여행 정산 내역]\n`;
             text += `---------------------------\n`;
-            text += `💰 총 지출: ${totalAmount.toLocaleString()}원/엔\n`;
-            text += `👥 정산 인원: ${settlementMembers.length}명 · 진행률 ${pct}% (${totalDone.toLocaleString()}/${totalDue.toLocaleString()})\n\n`;
-            text += `📌 지출 상세:\n`;
+            text += `💰 총 지출: ${t.totalKRW.toLocaleString()}원 (${totalsBreakdownText(t)})\n`;
+            text += `💱 환율: 100엔 = ${jpyRate}원\n`;
+            text += `👥 정산 인원: ${settlementMembers.length}명 · 진행률 ${pct}% (${done.toLocaleString()}/${totalDue.toLocaleString()}원)\n\n`;
 
+            text += `👤 개인별 요약 (결제 / 부담 / 남은 정산, 원화 환산):\n`;
+            settlementSummaryNames(stat).forEach(n => {
+                const s = stat[n];
+                if (!s) return;
+                const rem = bal[n] || 0;
+                const pending = rem > 0 ? `받을 ${rem.toLocaleString()}` : rem < 0 ? `보낼 ${(-rem).toLocaleString()}` : '✅ 완료';
+                text += `- ${n}: ${s.paid.toLocaleString()} / ${s.owed.toLocaleString()} / ${pending}\n`;
+            });
+
+            if (transfers.length) {
+                text += `\n💸 남은 송금 (${transfers.length}회):\n`;
+                transfers.forEach(tr => { text += `- ${tr.from} → ${tr.to}: ${tr.amount.toLocaleString()}원\n`; });
+            } else if (expenses.length) {
+                text += `\n💸 남은 송금 없음 ✅\n`;
+            }
+            if (transferPayments.length) {
+                text += `\n✅ 완료된 송금 (${transferPayments.length}건):\n`;
+                transferPayments.forEach(p => { text += `- ${p.from} → ${p.to}: ${Number(p.amount).toLocaleString()}원 (${p.at || ''})\n`; });
+            }
+
+            text += `\n📌 지출 상세:\n`;
             expenses.forEach((e, idx) => {
                 const parts = expParticipants(e);
                 const share = expShare(e);
+                const cur = expCurrency(e);
                 const pendingNames = parts.filter(p => p !== e.payer && !expSettled(e).includes(p));
-                text += `${idx+1}. ${e.title}: ${e.amount.toLocaleString()}원/엔 (결제 ${e.payer}${e.account ? `, ${e.account}` : ''})\n`;
-                text += `   ${parts.length}명 분담 · 1인 ${share.toLocaleString()} · ${pendingNames.length ? `미정산: ${pendingNames.join(', ')}` : '✅ 정산완료'}\n`;
+                text += `${idx+1}. ${e.title}: ${fmtMoney(e.amount, cur)} (결제 ${e.payer}${e.account ? `, ${e.account}` : ''})\n`;
+                text += `   ${parts.length}명 분담 · 1인 ${fmtMoney(share, cur)} · ${pendingNames.length ? `미정산: ${pendingNames.join(', ')}` : '✅ 정산완료'}\n`;
             });
 
             copyToClipboard(text, '정산 내역이 클립보드에 복사되었습니다!');
@@ -2012,6 +2309,13 @@
                     messagingSenderId: "182409782645",
                     appId: "1:182409782645:web:b59615e9dee3f35f915f3c"
                 };
+
+                // 테스트용: ?nofb=1 로 열면 Firebase 를 연결하지 않고 이 기기(localStorage)에서만 동작 (실데이터 보호)
+                if (new URLSearchParams(location.search).has('nofb')) {
+                    setSyncStatus('error', '테스트 모드(nofb): Firebase 미연결, 이 기기에만 저장');
+                    showToast('테스트 모드: Firebase 미연결 (서버 데이터 변경 없음)', '🧪', 5000);
+                    return;
+                }
 
                 const app = initializeApp(firebaseConfig);
                 const db = getDatabase(app);
